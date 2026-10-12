@@ -99,11 +99,11 @@ Shader "URP/TechSkyboxVR"
                 half3 col = _BaseColor.rgb;
 
                 // 1) 经纬网格（慢速流动）
-                half lat  = GridLine(el, _GridDensity, _LineWidth, t, 0.4);
-                half lon  = GridLine(az, _GridDensity, _LineWidth, t, 0.6);
+                // half lat  = GridLine(el, _GridDensity, _LineWidth, t, 0.4);
+                // half lon  = GridLine(az, _GridDensity, _LineWidth, t, 0.6);
                 // half diag = GridLine(el + az, _GridDensity * 0.7, _LineWidth * 0.8, t, 0.9);
-                half grid = max(max(lat, lon), 0.0) * 0.3;
-                col += _GridColor.rgb * grid * (0.5 + 0.5 * sin(_Time.y * 0.5));
+                // half grid = max(max(lat, lon), 0.0) * 0.3;
+                // col += _GridColor.rgb * grid * (0.5 + 0.5 * sin(_Time.y * 0.5));
 
                 // 2) 仰角扫描带（很慢，避免晕）
                 half scanPos = frac(hemi + t * _ScanSpeed);
@@ -112,12 +112,12 @@ Shader "URP/TechSkyboxVR"
                 col += _GlowColor.rgb * scan * _ScanIntensity * 0.2;
 
                 // 3) 数据星点（稀疏、慢闪）
-                half cell = az * _StarDensity + el * _StarDensity * 0.5;
-                half h1 = frac(sin(cell * 12.9898) * 43758.5453);
-                half h2 = frac(sin(cell * 78.2330) * 12543.1234);
-                half spark = step(0.95, h1) * step(0.95, h2);
-                half blink = 0.1 + 0.4 * sin(_Time.y * 2.2 + h1 * 80.0);
-                col += _AccentColor.rgb * spark * blink * 15.8;
+                // half cell = az * _StarDensity + el * _StarDensity * 0.5;
+                // half h1 = frac(sin(cell * 12.9898) * 43758.5453);
+                // half h2 = frac(sin(cell * 78.2330) * 12543.1234);
+                // half spark = step(0.98, h1) * step(0.98, h2);
+                // half blink = 0.5 + 0.4 * sin(_Time.y * 2.2 + h1 * 80.0);
+                // col += _AccentColor.rgb * spark * blink * 15.8;
 
                 // 4) 天顶脉冲环（极慢）
                 half r = abs(el);

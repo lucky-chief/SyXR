@@ -125,11 +125,11 @@ Material:
     - _RingSpeed: 0.85
     - _ScanIntensity: 0.55
     - _ScanSpeed: 0.27
-    - _ScanWidth: 0.044
+    - _ScanWidth: 0.02
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
-    - _Speed: 0.69
+    - _Speed: 0
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _StarDensity: 16
