@@ -1,5 +1,18 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-7026082144331756059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58113acb67574994eaebbdb4eebb8ca6, type: 3}
+  m_Name: ShiyanXR SBS Present
+  m_EditorClassIdentifier: com.unity.shiyantech.xr.editor::com.unity.shiyantech.xr.ShiyanXRSbsPresentFeature
+  m_Active: 1
 --- !u!114 &-2261979120233098276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -39,7 +52,8 @@ MonoBehaviour:
     probeSamplingDebugMesh: {fileID: 0}
     probeSamplingDebugTexture: {fileID: 0}
     probeVolumeBlendStatesCS: {fileID: 0}
-  m_RendererFeatures: []
+  m_RendererFeatures:
+  - {fileID: -7026082144331756059}
   m_RendererFeatureMap: 
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
