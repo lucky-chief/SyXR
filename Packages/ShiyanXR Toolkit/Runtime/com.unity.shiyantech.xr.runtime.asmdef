@@ -1,0 +1,27 @@
+{
+    "name": "com.unity.shiyantech.xr",
+    "rootNamespace": "com.unity.shiyantech.xr",
+    "references": [
+        "GUID:15fc0a57446b3144c949da3e2b9737a9",
+        "GUID:75469ad4d38634e559750d17036d5f7c",
+        "GUID:4847341ff46394e83bb78fbd0652937e",
+        "GUID:3f088b6c6874b1b49a97747d1259079a",
+        "GUID:fe685ec1767f73d42b749ea8045bfe43",
+        "GUID:04a183f84ad5e8446be9cc1d3580cf0a"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.xr.compositionlayers",
+            "expression": "",
+            "define": "XR_COMPOSITION_LAYERS"
+        }
+    ],
+    "noEngineReferences": false
+}
