@@ -38,32 +38,21 @@ namespace com.shiyanxr.editor
             else
                 text = "Eye";
 
-            tooltip = "视延XR：眼睛视图与立体会聚设置";
+            tooltip = "视延XR：会聚面与眼视参考图形设置";
             clicked += () => ShiyanXREyePanel.Show(worldBound);
         }
     }
 
     /// <summary>
-    /// 弹出的设置面板：View / 会聚面距离 / 瞳距 / 显示相机与左右相机颜色 / 会聚面颜色与透明度。
+    /// 弹出的设置面板：会聚面距离 / 瞳距 / 显示相机与左右相机颜色 / 会聚面颜色与透明度。
     /// 用 PopupWindow 承载——面板控件在常规编辑器 GUI 里绘制（不在 overlay 的事件管线里），
     /// 这也是 Input System、Perforce 等包在工具栏里弹面板的既有做法。
     /// </summary>
     sealed class ShiyanXREyePanel : PopupWindowContent
     {
-        const string k_ViewLabel = "View";
-
-        static readonly string[] k_ViewNames = { "Left", "Right", "Center", "Both" };
-
-        // View 的选项下标（与 k_ViewNames 同序），供预览驱动共用，避免两处写死魔数
-        internal const int ViewLeft = 0;
-        internal const int ViewRight = 1;
-        internal const int ViewCenter = 2;
-        internal const int ViewBoth = 3;
-
-        // 面板状态：View / 会聚面距离 / 瞳距 由 ShiyanXREyeStereoPreview 读走去驱动 Main Camera；
-        // DisplayCameras 与三个颜色、透明度用于它在 Scene View 里画的参考图形（左右眼视锥 / 会聚面）。
+        // 面板状态：会聚面距离 / 瞳距 / DisplayCameras 与三个颜色、透明度，
+        // 由 ShiyanXREyeStereoPreview 读走，用于 Scene View 里画的参考图形（左右眼视锥 / 会聚面）。
         // 这些字段必须活过域重载，否则进入 Play 时会退回默认值 —— 存续机制见下面的静态构造函数。
-        internal static int s_View = ViewBoth;
         internal static float s_ConvergencePlaneDistance = 1f;
         internal static float s_InterocularDistance = 0.065f;
         internal static bool s_DisplayCameras = true;
@@ -77,13 +66,11 @@ namespace com.shiyanxr.editor
         const string k_SessionPrefix = "ShiyanXR.EyePanel.";
 
         /// <summary>
-        /// 域重载会把静态字段清零，而默认值恰好是 Both；进 Play 就会发生一次域重载，
-        /// 于是 Play 下 View 退回 Both，选 Left / Right / Center 都不管用。
+        /// 域重载会把静态字段清零，而进 Play 就会发生一次域重载——不恢复的话面板会退回默认值。
         /// 所以状态改存 SessionState：它跨域重载存活，编辑器关闭才清。
         /// </summary>
         static ShiyanXREyePanel()
         {
-            s_View = SessionState.GetInt(k_SessionPrefix + "View", s_View);
             s_ConvergencePlaneDistance = SessionState.GetFloat(k_SessionPrefix + "ConvergencePlaneDistance", s_ConvergencePlaneDistance);
             s_InterocularDistance = SessionState.GetFloat(k_SessionPrefix + "InterocularDistance", s_InterocularDistance);
             s_DisplayCameras = SessionState.GetBool(k_SessionPrefix + "DisplayCameras", s_DisplayCameras);
@@ -95,7 +82,6 @@ namespace com.shiyanxr.editor
 
         static void SaveState()
         {
-            SessionState.SetInt(k_SessionPrefix + "View", s_View);
             SessionState.SetFloat(k_SessionPrefix + "ConvergencePlaneDistance", s_ConvergencePlaneDistance);
             SessionState.SetFloat(k_SessionPrefix + "InterocularDistance", s_InterocularDistance);
             SessionState.SetBool(k_SessionPrefix + "DisplayCameras", s_DisplayCameras);
@@ -119,25 +105,17 @@ namespace com.shiyanxr.editor
             PopupWindow.Show(activatorRect, new ShiyanXREyePanel());
         }
 
-        // 八行控件：View / 距离 / 瞳距 / 显示相机 / 左右相机颜色 / 会聚面颜色与透明度
-        public override Vector2 GetWindowSize() => new Vector2(400f, 210f);
+        // 七行控件：距离 / 瞳距 / 显示相机 / 左右相机颜色 / 会聚面颜色与透明度
+        public override Vector2 GetWindowSize() => new Vector2(400f, 190f);
 
         public override void OnGUI(Rect rect)
         {
-            // 统一的标签宽度，让八行控件左边缘对齐
+            // 统一的标签宽度，让七行控件左边缘对齐
             EditorGUIUtility.labelWidth = 170f;
 
             // 这些值都用来画 Scene View 里的那个会聚面，改动后得让它立刻重绘，
             // 否则拖滑条时看不到变化（要等 Scene View 自己因鼠标事件重画）
             EditorGUI.BeginChangeCheck();
-
-            EditorGUILayout.BeginHorizontal();
-            // 标签只占窄宽：GUILayout.Toolbar 是等分宽度的，若用 PrefixLabel 吃掉 labelWidth，
-            // 四个按钮放不下会把最后一个截掉（Both 就是这么丢的）
-            EditorGUILayout.LabelField(k_ViewLabel, GUILayout.Width(40f));
-            // 四选一：用内置分段控件做 toggle group
-            s_View = GUILayout.Toolbar(s_View, k_ViewNames);
-            EditorGUILayout.EndHorizontal();
 
             s_ConvergencePlaneDistance = EditorGUILayout.FloatField("Convergence Plane Distance", s_ConvergencePlaneDistance);
             s_InterocularDistance = EditorGUILayout.FloatField("Interocular Distance", s_InterocularDistance);
