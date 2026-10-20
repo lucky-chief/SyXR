@@ -45,12 +45,13 @@ namespace com.shiyanxr.editor
 
     /// <summary>
     /// 弹出的设置面板：会聚面距离 / 瞳距 / 显示相机与左右相机颜色 / 会聚面颜色与透明度。
-    /// 用 PopupWindow 承载——面板控件在常规编辑器 GUI 里绘制（不在 overlay 的事件管线里），
-    /// 这也是 Input System、Perforce 等包在工具栏里弹面板的既有做法。
+    /// 会聚面距离是眼睛到会聚面（裸眼 3D 屏幕）的观看距离：屏幕固定在 Main Camera 的位置，
+    /// 改变距离时移动的是左右眼位置。用 PopupWindow 承载——面板控件在常规编辑器 GUI 里绘制
+    /// （不在 overlay 的事件管线里），这也是 Input System、Perforce 等包在工具栏里弹面板的既有做法。
     /// </summary>
     sealed class ShiyanXREyePanel : PopupWindowContent
     {
-        // 面板状态：会聚面距离 / 瞳距 / DisplayCameras 与三个颜色、透明度，
+        // 面板状态：会聚面距离（眼睛到屏幕的观看距离）/ 瞳距 / DisplayCameras 与三个颜色、透明度，
         // 由 ShiyanXREyeStereoPreview 读走，用于 Scene View 里画的参考图形（左右眼视锥 / 会聚面）。
         // 这些字段必须活过域重载，否则进入 Play 时会退回默认值 —— 存续机制见下面的静态构造函数。
         internal static float s_ConvergencePlaneDistance = 1f;
@@ -117,7 +118,9 @@ namespace com.shiyanxr.editor
             // 否则拖滑条时看不到变化（要等 Scene View 自己因鼠标事件重画）
             EditorGUI.BeginChangeCheck();
 
-            s_ConvergencePlaneDistance = EditorGUILayout.FloatField("Convergence Plane Distance", s_ConvergencePlaneDistance);
+            s_ConvergencePlaneDistance = EditorGUILayout.FloatField(
+                new GUIContent("Convergence Plane Distance", "眼睛到会聚面（屏幕）的观看距离。会聚面固定在 Main Camera 的位置，改变它时移动的是左右眼位置。"),
+                s_ConvergencePlaneDistance);
             s_InterocularDistance = EditorGUILayout.FloatField("Interocular Distance", s_InterocularDistance);
             s_DisplayCameras = EditorGUILayout.Toggle("Display Cameras", s_DisplayCameras);
 
@@ -141,6 +144,8 @@ namespace com.shiyanxr.editor
             {
                 SaveState();
                 SceneView.RepaintAll();
+                // Main Camera 的 V/P 也依赖这些参数，编辑态下额外推一次 Game View 重绘
+                EditorApplication.QueuePlayerLoopUpdate();
             }
         }
     }
