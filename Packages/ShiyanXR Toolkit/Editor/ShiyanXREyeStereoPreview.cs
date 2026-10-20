@@ -46,7 +46,7 @@ namespace com.shiyanxr.editor
 
         /// <summary>眼睛到会聚面（屏幕）的距离：面板值取绝对值，并夹住下限——它要做除数。</summary>
         static float ConvergencePlaneDistance() =>
-            Mathf.Max(Mathf.Abs(ShiyanXREyePanel.s_ConvergencePlaneDistance), 1e-4f);
+            Mathf.Max(Mathf.Abs(ShiyanXREyePanel.State.convergencePlaneDistance), 1e-4f);
 
         /// <summary>
         /// 会聚面中心（世界坐标）：固定在相机 Transform 的位置，也就是裸眼 3D 屏幕所在处，不随观看距离移动。
@@ -69,7 +69,7 @@ namespace com.shiyanxr.editor
         /// </summary>
         static Vector3 EyePosition(Transform cameraTransform, float eyeSign)
         {
-            float offset = eyeSign * ShiyanXREyePanel.s_InterocularDistance * 0.5f;
+            float offset = eyeSign * ShiyanXREyePanel.State.interocularDistance * 0.5f;
             return cameraTransform.position
                    - cameraTransform.forward * ConvergencePlaneDistance()
                    + cameraTransform.right * offset;
@@ -82,7 +82,7 @@ namespace com.shiyanxr.editor
         static void EyeFrustumEdges(float eyeSign, float atDistance, out float left, out float right, out float top, out float bottom)
         {
             ConvergencePlaneHalfSize(out float halfWidth, out float halfHeight);
-            float offset = eyeSign * ShiyanXREyePanel.s_InterocularDistance * 0.5f;
+            float offset = eyeSign * ShiyanXREyePanel.State.interocularDistance * 0.5f;
             float scale = atDistance / ConvergencePlaneDistance();
 
             left = (-halfWidth - offset) * scale;
@@ -113,10 +113,10 @@ namespace com.shiyanxr.editor
             var camera = Camera.main;
             if (camera == null) return;
 
-            if (ShiyanXREyePanel.s_ConvergencePlaneAlpha > 0f)
+            if (ShiyanXREyePanel.State.convergencePlaneAlpha > 0f)
                 DrawConvergencePlane(camera);
 
-            if (ShiyanXREyePanel.s_DisplayCameras)
+            if (ShiyanXREyePanel.State.displayCameras)
                 DrawEyeFrustums(camera);
         }
 
@@ -211,8 +211,8 @@ namespace com.shiyanxr.editor
             s_PlaneCorners[2] = center + right + up; // 右上
             s_PlaneCorners[3] = center - right + up; // 左上
 
-            var planeColor = ShiyanXREyePanel.s_ConvergencePlaneColor;
-            var color = new Color(planeColor.r, planeColor.g, planeColor.b, ShiyanXREyePanel.s_ConvergencePlaneAlpha);
+            var planeColor = ShiyanXREyePanel.State.convergencePlaneColor;
+            var color = new Color(planeColor.r, planeColor.g, planeColor.b, ShiyanXREyePanel.State.convergencePlaneAlpha);
 
             // 让平面像普通物体一样被它前方的几何遮挡；用完恢复，不干扰其它 Scene View 绘制（如上面那套视锥）
             var previousZTest = Handles.zTest;
@@ -228,8 +228,8 @@ namespace com.shiyanxr.editor
         /// </summary>
         static void DrawEyeFrustums(Camera camera)
         {
-            DrawEyeFrustum(camera, k_LeftEyeSign, ShiyanXREyePanel.s_LeftCameraColor);
-            DrawEyeFrustum(camera, k_RightEyeSign, ShiyanXREyePanel.s_RightCameraColor);
+            DrawEyeFrustum(camera, k_LeftEyeSign, ShiyanXREyePanel.State.leftCameraColor);
+            DrawEyeFrustum(camera, k_RightEyeSign, ShiyanXREyePanel.State.rightCameraColor);
         }
 
         static void DrawEyeFrustum(Camera camera, float eyeSign, Color color)

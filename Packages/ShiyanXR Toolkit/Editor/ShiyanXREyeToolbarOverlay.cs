@@ -48,48 +48,70 @@ namespace com.shiyanxr.editor
     /// 会聚面距离是眼睛到会聚面（裸眼 3D 屏幕）的观看距离：屏幕固定在 Main Camera 的位置，
     /// 改变距离时移动的是左右眼位置。用 PopupWindow 承载——面板控件在常规编辑器 GUI 里绘制
     /// （不在 overlay 的事件管线里），这也是 Input System、Perforce 等包在工具栏里弹面板的既有做法。
+    ///
+    /// 面板值通过 <see cref="ShiyanXREyePanelState"/> + SerializedObject 读写：只有挂在 UnityEngine.Object 上，
+    /// Unity 才能把改动记进 Undo 栈，Ctrl+Z / Ctrl+Y 可以撤销 / 重做面板上的修改。
     /// </summary>
     sealed class ShiyanXREyePanel : PopupWindowContent
     {
-        // 面板状态：会聚面距离（眼睛到屏幕的观看距离）/ 瞳距 / DisplayCameras 与三个颜色、透明度，
-        // 由 ShiyanXREyeStereoPreview 读走，用于 Scene View 里画的参考图形（左右眼视锥 / 会聚面）。
-        // 这些字段必须活过域重载，否则进入 Play 时会退回默认值 —— 存续机制见下面的静态构造函数。
-        internal static float s_ConvergencePlaneDistance = 1f;
-        internal static float s_InterocularDistance = 0.065f;
-        internal static bool s_DisplayCameras = true;
-        // 默认取红 / 蓝：与 ShiyanDevicesSimulator 的 leftCameraColor / rightCameraColor 同一视觉约定
-        internal static Color s_LeftCameraColor = Color.red;
-        internal static Color s_RightCameraColor = Color.blue;
-        // 默认取绿色：与 ShiyanDevicesSimulator 的 screenColor（屏幕 / 焦平面）同一视觉约定
-        internal static Color s_ConvergencePlaneColor = Color.cyan;
-        internal static float s_ConvergencePlaneAlpha = 0.3f;
-
         const string k_SessionPrefix = "ShiyanXR.EyePanel.";
+        const string k_UndoName = "Change ShiyanXR Eye Preview Settings";
+
+        static ShiyanXREyePanelState s_State;
+        static SerializedObject s_SerializedState;
+        // 当前打开的面板：Undo/Redo 后要立即重绘它，否则控件上还显示旧值
+        static ShiyanXREyePanel s_OpenPanel;
+
+        /// <summary>
+        /// 面板状态的载体，由 ShiyanXREyeStereoPreview 读走，用于 Scene View 里的参考图形。
+        /// 不落盘（HideFlags.DontSave），域重载后由 <see cref="LoadState"/> 从 SessionState 恢复。
+        /// </summary>
+        internal static ShiyanXREyePanelState State
+        {
+            get
+            {
+                if (s_State != null) return s_State;
+
+                s_State = ScriptableObject.CreateInstance<ShiyanXREyePanelState>();
+                // 不能用 HideAndDontSave：它包含 NotEditable，SerializedObject 会把面板控件全部画成只读。
+                // DontSave 只禁止落盘 / 卸载，不影响编辑与 Undo。
+                s_State.hideFlags = HideFlags.DontSave;
+                LoadState(s_State);
+                return s_State;
+            }
+        }
+
+        static ShiyanXREyePanel()
+        {
+            Undo.undoRedoPerformed += OnUndoRedoPerformed;
+            AssemblyReloadEvents.beforeAssemblyReload += DestroyState;
+        }
 
         /// <summary>
         /// 域重载会把静态字段清零，而进 Play 就会发生一次域重载——不恢复的话面板会退回默认值。
-        /// 所以状态改存 SessionState：它跨域重载存活，编辑器关闭才清。
+        /// 所以状态存 SessionState：它跨域重载存活，编辑器关闭才清。
         /// </summary>
-        static ShiyanXREyePanel()
+        static void LoadState(ShiyanXREyePanelState state)
         {
-            s_ConvergencePlaneDistance = SessionState.GetFloat(k_SessionPrefix + "ConvergencePlaneDistance", s_ConvergencePlaneDistance);
-            s_InterocularDistance = SessionState.GetFloat(k_SessionPrefix + "InterocularDistance", s_InterocularDistance);
-            s_DisplayCameras = SessionState.GetBool(k_SessionPrefix + "DisplayCameras", s_DisplayCameras);
-            s_ConvergencePlaneAlpha = SessionState.GetFloat(k_SessionPrefix + "ConvergencePlaneAlpha", s_ConvergencePlaneAlpha);
-            s_LeftCameraColor = LoadColor("LeftCameraColor", s_LeftCameraColor);
-            s_RightCameraColor = LoadColor("RightCameraColor", s_RightCameraColor);
-            s_ConvergencePlaneColor = LoadColor("ConvergencePlaneColor", s_ConvergencePlaneColor);
+            state.convergencePlaneDistance = SessionState.GetFloat(k_SessionPrefix + "ConvergencePlaneDistance", state.convergencePlaneDistance);
+            state.interocularDistance = SessionState.GetFloat(k_SessionPrefix + "InterocularDistance", state.interocularDistance);
+            state.displayCameras = SessionState.GetBool(k_SessionPrefix + "DisplayCameras", state.displayCameras);
+            state.convergencePlaneAlpha = SessionState.GetFloat(k_SessionPrefix + "ConvergencePlaneAlpha", state.convergencePlaneAlpha);
+            state.leftCameraColor = LoadColor("LeftCameraColor", state.leftCameraColor);
+            state.rightCameraColor = LoadColor("RightCameraColor", state.rightCameraColor);
+            state.convergencePlaneColor = LoadColor("ConvergencePlaneColor", state.convergencePlaneColor);
         }
 
         static void SaveState()
         {
-            SessionState.SetFloat(k_SessionPrefix + "ConvergencePlaneDistance", s_ConvergencePlaneDistance);
-            SessionState.SetFloat(k_SessionPrefix + "InterocularDistance", s_InterocularDistance);
-            SessionState.SetBool(k_SessionPrefix + "DisplayCameras", s_DisplayCameras);
-            SessionState.SetFloat(k_SessionPrefix + "ConvergencePlaneAlpha", s_ConvergencePlaneAlpha);
-            SaveColor("LeftCameraColor", s_LeftCameraColor);
-            SaveColor("RightCameraColor", s_RightCameraColor);
-            SaveColor("ConvergencePlaneColor", s_ConvergencePlaneColor);
+            var state = State;
+            SessionState.SetFloat(k_SessionPrefix + "ConvergencePlaneDistance", state.convergencePlaneDistance);
+            SessionState.SetFloat(k_SessionPrefix + "InterocularDistance", state.interocularDistance);
+            SessionState.SetBool(k_SessionPrefix + "DisplayCameras", state.displayCameras);
+            SessionState.SetFloat(k_SessionPrefix + "ConvergencePlaneAlpha", state.convergencePlaneAlpha);
+            SaveColor("LeftCameraColor", state.leftCameraColor);
+            SaveColor("RightCameraColor", state.rightCameraColor);
+            SaveColor("ConvergencePlaneColor", state.convergencePlaneColor);
         }
 
         // SessionState 没有颜色类型，借 HTML 串（含 alpha）存取
@@ -101,9 +123,49 @@ namespace com.shiyanxr.editor
         static void SaveColor(string key, Color color) =>
             SessionState.SetString(k_SessionPrefix + key, "#" + ColorUtility.ToHtmlStringRGBA(color));
 
+        /// <summary>Undo/Redo 直接改的是 state 对象：把结果同步回 SessionState，并刷新 Scene View / Game View 与面板。</summary>
+        static void OnUndoRedoPerformed()
+        {
+            // state 还没创建过（或刚被域重载清掉）时，SessionState 里已经是最后一次保存的值，无需回写
+            if (s_State == null) return;
+
+            SaveState();
+            RepaintAll();
+        }
+
+        static void DestroyState()
+        {
+            if (s_State != null)
+                UnityEngine.Object.DestroyImmediate(s_State);
+
+            s_State = null;
+            s_SerializedState?.Dispose();
+            s_SerializedState = null;
+            s_OpenPanel = null;
+        }
+
+        static void RepaintAll()
+        {
+            SceneView.RepaintAll();
+            // Main Camera 的 V/P 也依赖这些参数，编辑态下额外推一次 Game View 重绘
+            EditorApplication.QueuePlayerLoopUpdate();
+
+            var window = s_OpenPanel != null ? s_OpenPanel.editorWindow : null;
+            if (window != null)
+                window.Repaint();
+        }
+
         public static void Show(Rect activatorRect)
         {
             PopupWindow.Show(activatorRect, new ShiyanXREyePanel());
+        }
+
+        public override void OnOpen() => s_OpenPanel = this;
+
+        public override void OnClose()
+        {
+            if (s_OpenPanel == this)
+                s_OpenPanel = null;
         }
 
         // 七行控件：距离 / 瞳距 / 显示相机 / 左右相机颜色 / 会聚面颜色与透明度
@@ -114,39 +176,79 @@ namespace com.shiyanxr.editor
             // 统一的标签宽度，让七行控件左边缘对齐
             EditorGUIUtility.labelWidth = 170f;
 
-            // 这些值都用来画 Scene View 里的那个会聚面，改动后得让它立刻重绘，
-            // 否则拖滑条时看不到变化（要等 Scene View 自己因鼠标事件重画）
-            EditorGUI.BeginChangeCheck();
+            var state = State;
+            if (s_SerializedState == null || s_SerializedState.targetObject != state)
+                s_SerializedState = new SerializedObject(state);
 
-            s_ConvergencePlaneDistance = EditorGUILayout.FloatField(
-                new GUIContent("Convergence Plane Distance", "眼睛到会聚面（屏幕）的观看距离。会聚面固定在 Main Camera 的位置，改变它时移动的是左右眼位置。"),
-                s_ConvergencePlaneDistance);
-            s_InterocularDistance = EditorGUILayout.FloatField("Interocular Distance", s_InterocularDistance);
-            s_DisplayCameras = EditorGUILayout.Toggle("Display Cameras", s_DisplayCameras);
+            var serializedState = s_SerializedState;
+            serializedState.Update();
+
+            EditorGUILayout.PropertyField(
+                serializedState.FindProperty(nameof(ShiyanXREyePanelState.convergencePlaneDistance)),
+                new GUIContent("Convergence Plane Distance", "眼睛到会聚面（屏幕）的观看距离。会聚面固定在 Main Camera 的位置，改变它时移动的是左右眼位置。"));
+            EditorGUILayout.PropertyField(
+                serializedState.FindProperty(nameof(ShiyanXREyePanelState.interocularDistance)),
+                new GUIContent("Interocular Distance"));
+            EditorGUILayout.PropertyField(
+                serializedState.FindProperty(nameof(ShiyanXREyePanelState.displayCameras)),
+                new GUIContent("Display Cameras"));
 
             // 只取 RGB：这两个是画视锥线用的纯色，不另给透明度
-            s_LeftCameraColor = EditorGUILayout.ColorField(
-                new GUIContent("Left Camera Color"), s_LeftCameraColor,
-                showEyedropper: true, showAlpha: false, hdr: false);
-            s_RightCameraColor = EditorGUILayout.ColorField(
-                new GUIContent("Right Camera Color"), s_RightCameraColor,
-                showEyedropper: true, showAlpha: false, hdr: false);
+            DrawColor(serializedState.FindProperty(nameof(ShiyanXREyePanelState.leftCameraColor)), "Left Camera Color");
+            DrawColor(serializedState.FindProperty(nameof(ShiyanXREyePanelState.rightCameraColor)), "Right Camera Color");
 
             // 只取 RGB：透明度由下面那条独立滑条管，取色器里再给一个 alpha 会互相打架
-            s_ConvergencePlaneColor = EditorGUILayout.ColorField(
-                new GUIContent("Convergence Plane Color"), s_ConvergencePlaneColor,
-                showEyedropper: true, showAlpha: false, hdr: false);
+            DrawColor(serializedState.FindProperty(nameof(ShiyanXREyePanelState.convergencePlaneColor)), "Convergence Plane Color");
 
             // EditorGUILayout.Slider 自带右侧数值输入框，不再另加 FloatField（那会变成两个输入框）
-            s_ConvergencePlaneAlpha = EditorGUILayout.Slider("Convergence Plane Alpha", s_ConvergencePlaneAlpha, 0f, 1f);
+            var alpha = serializedState.FindProperty(nameof(ShiyanXREyePanelState.convergencePlaneAlpha));
+            float alphaValue = EditorGUILayout.Slider(new GUIContent("Convergence Plane Alpha"), alpha.floatValue, 0f, 1f);
+            if (!Mathf.Approximately(alphaValue, alpha.floatValue))
+                alpha.floatValue = alphaValue;
 
-            if (EditorGUI.EndChangeCheck())
+            // 控件只改了 SerializedObject 的本地副本；这里先确认真的有修改，
+            // 再用完整快照记录改动前的状态，最后一次性写回 state。
+            // 这样 Ctrl+Z / Ctrl+Y 就能撤销 / 重做面板上的修改。
+            if (!serializedState.hasModifiedProperties)
+                return;
+
+            // 非资源对象（HideFlags.DontSave）上 ApplyModifiedProperties 的 diff 式 Undo 不一定可靠，
+            // 改为 RegisterCompleteObjectUndo 记录完整状态，再 Apply...WithoutUndo 写回。
+            Undo.RegisterCompleteObjectUndo(state, k_UndoName);
+            if (serializedState.ApplyModifiedPropertiesWithoutUndo())
             {
                 SaveState();
-                SceneView.RepaintAll();
-                // Main Camera 的 V/P 也依赖这些参数，编辑态下额外推一次 Game View 重绘
-                EditorApplication.QueuePlayerLoopUpdate();
+                RepaintAll();
             }
         }
+
+        static void DrawColor(SerializedProperty property, string label)
+        {
+            Color value = EditorGUILayout.ColorField(
+                new GUIContent(label), property.colorValue,
+                showEyedropper: true, showAlpha: false, hdr: false);
+
+            // 只在真正变化时写回，避免每帧都标记修改、产生空的 Undo 记录
+            if (value != property.colorValue)
+                property.colorValue = value;
+        }
+    }
+
+    /// <summary>
+    /// 工具栏面板的状态载体。必须是 UnityEngine.Object，Unity 的 Undo 才能记录 / 撤销这些值；
+    /// 对象不落盘（HideFlags.DontSave），跨域重载的持久化由 SessionState 负责。
+    /// </summary>
+    internal sealed class ShiyanXREyePanelState : ScriptableObject
+    {
+        // public 字段会被 Unity 序列化，SerializedProperty 才能找到并记录 Undo
+        public float convergencePlaneDistance = 1f;
+        public float interocularDistance = 0.065f;
+        public bool displayCameras = true;
+        // 默认取红 / 蓝：与 ShiyanDevicesSimulator 的 leftCameraColor / rightCameraColor 同一视觉约定
+        public Color leftCameraColor = Color.red;
+        public Color rightCameraColor = Color.blue;
+        // 默认取青色：与 ShiyanDevicesSimulator 的 screenColor（屏幕 / 焦平面）同一视觉约定
+        public Color convergencePlaneColor = Color.cyan;
+        public float convergencePlaneAlpha = 0.3f;
     }
 }

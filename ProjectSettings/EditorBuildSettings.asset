@@ -8,9 +8,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
+  - enabled: 0
     path: Assets/Samples/XR Interaction Toolkit/3.4.0/Hands Interaction Demo/HandsDemoScene.unity
     guid: 3ff35cecbcc52cc42945cf531638a60a
+  - enabled: 1
+    path: Assets/Samples/Mouse/mouse.unity
+    guid: 892495eca3f2cb2499808c86e736215a
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 383ba16b2669cef418c2ca2f981fb379,
       type: 2}

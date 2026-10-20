@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.XR;
-#if !UNITY_EDITOR
+#if !UNITY_EDITOR && UNITY_ANDROID
 using com.shiyantech.syruntime.unity;
 #endif
 

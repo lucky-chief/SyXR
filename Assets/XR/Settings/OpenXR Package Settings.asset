@@ -150,6 +150,9 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: 
   features:
+  - {fileID: 4519088417437433503}
+  - {fileID: 2005319662050729852}
+  - {fileID: -2660071221241080749}
   - {fileID: 8658362778125094433}
   - {fileID: -2943042846131138901}
   - {fileID: -8050445464316517663}
@@ -376,6 +379,28 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+--- !u!114 &-3858568392093548917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 466023e5535785e4e9a187b966455172, type: 3}
+  m_Name: RawMouseProfile Standalone
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawMouseProfile
+  m_enabled: 0
+  nameUi: Shiyan Raw Mouse
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.rawmouse
+  openxrExtensionStrings: 
+  company: Shiyan
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
 --- !u!114 &-3721596679685731462
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -524,6 +549,9 @@ MonoBehaviour:
   - {fileID: -1414240336383611646}
   - {fileID: 5534971493409796590}
   - {fileID: -2363040526809907868}
+  - {fileID: 4796140182476144334}
+  - {fileID: 5192799995608784119}
+  - {fileID: -3858568392093548917}
   - {fileID: -2330878163186939848}
   - {fileID: -3721596679685731462}
   - {fileID: -354889197337048393}
@@ -587,6 +615,28 @@ MonoBehaviour:
   featureIdInternal: com.unity.openxr.feature.input.handinteraction
   openxrExtensionStrings: XR_EXT_hand_interaction
   company: Unity
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+--- !u!114 &-2660071221241080749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f95fecfbfe13824c949b47f2e3ee33c, type: 3}
+  m_Name: RawKeyboardProfile Android
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawKeyboardProfile
+  m_enabled: 0
+  nameUi: Shiyan Raw Keyboard
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.rawkeyboard
+  openxrExtensionStrings: 
+  company: Shiyan
   priority: 0
   targetOpenXRApiVersion: 
   required: 0
@@ -963,6 +1013,28 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+--- !u!114 &2005319662050729852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 466023e5535785e4e9a187b966455172, type: 3}
+  m_Name: RawMouseProfile Android
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawMouseProfile
+  m_enabled: 0
+  nameUi: Shiyan Raw Mouse
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.rawmouse
+  openxrExtensionStrings: 
+  company: Shiyan
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
 --- !u!114 &2510421012608650181
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1064,6 +1136,50 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+--- !u!114 &4519088417437433503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c402fff99f7749e47b060fddf5cb830f, type: 3}
+  m_Name: RawGamepadProfile Android
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawGamepadProfile
+  m_enabled: 0
+  nameUi: Shiyan Raw Gamepad
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.rawgamepad
+  openxrExtensionStrings: 
+  company: Shiyan
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+--- !u!114 &4796140182476144334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c402fff99f7749e47b060fddf5cb830f, type: 3}
+  m_Name: RawGamepadProfile Standalone
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawGamepadProfile
+  m_enabled: 0
+  nameUi: Shiyan Raw Gamepad
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.rawgamepad
+  openxrExtensionStrings: 
+  company: Shiyan
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
 --- !u!114 &4854492939509288303
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1106,6 +1222,28 @@ MonoBehaviour:
   featureIdInternal: com.unity.openxr.feature.input.hpreverb
   openxrExtensionStrings: XR_EXT_hp_mixed_reality_controller
   company: Unity
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+--- !u!114 &5192799995608784119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f95fecfbfe13824c949b47f2e3ee33c, type: 3}
+  m_Name: RawKeyboardProfile Standalone
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawKeyboardProfile
+  m_enabled: 0
+  nameUi: Shiyan Raw Keyboard
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.rawkeyboard
+  openxrExtensionStrings: 
+  company: Shiyan
   priority: 0
   targetOpenXRApiVersion: 
   required: 0
