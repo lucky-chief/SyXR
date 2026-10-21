@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.Layouts;
@@ -32,10 +33,10 @@ namespace Shiyan.OpenXR.RawInput
     {
         public const string featureId = "com.shiyan.openxr.rawmouse";
         public const string profile = "/interaction_profiles/shiyan/raw_mouse";
-        const string kDeviceName = "Shiyan Raw Mouse (OpenXR)";
+        const string kDeviceName = "Shiyan Raw Mouse OpenXR";
 
         [Preserve, InputControlLayout(displayName = kDeviceName)]
-        public class RawMouse : UnityEngine.InputSystem.InputDevice
+        public class RawMouse : OpenXRDevice
         {
             [Preserve, InputControl(name = "left", layout = "Button", displayName = "Left")]
             public ButtonControl leftButton { get; private set; }
@@ -91,6 +92,7 @@ namespace Shiyan.OpenXR.RawInput
             protected override void FinishSetup()
             {
                 base.FinishSetup();
+                Debug.Log("[ShiyanRawInput] RawMouse FinishSetup (device created)");
                 leftButton = GetChildControl<ButtonControl>("left");
                 rightButton = GetChildControl<ButtonControl>("right");
                 middleButton = GetChildControl<ButtonControl>("middle");
@@ -118,6 +120,7 @@ namespace Shiyan.OpenXR.RawInput
 
         protected override void RegisterDeviceLayout()
         {
+            Debug.Log("[ShiyanRawInput] RawMouse RegisterDeviceLayout");
             InputSystem.RegisterLayout(typeof(RawMouse),
                 matches: new InputDeviceMatcher()
                     .WithInterface(XRUtilities.InterfaceMatchAnyVersion)
@@ -131,6 +134,7 @@ namespace Shiyan.OpenXR.RawInput
 
         protected override void RegisterActionMapsWithRuntime()
         {
+            Debug.Log("[ShiyanRawInput] RawMouse RegisterActionMapsWithRuntime");
             AddActionMap(new ActionMapConfig
             {
                 name = "shiyanrawmouse",
@@ -142,7 +146,7 @@ namespace Shiyan.OpenXR.RawInput
                 {
                     new DeviceConfig
                     {
-                        characteristics = InputDeviceCharacteristics.None,
+                        characteristics = InputDeviceCharacteristics.TrackedDevice,
                         userPath = "/user/mouse"
                     }
                 },

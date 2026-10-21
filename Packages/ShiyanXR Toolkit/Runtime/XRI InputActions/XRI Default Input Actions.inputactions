@@ -1,4 +1,5 @@
 {
+    "version": 1,
     "name": "XRI Default Input Actions",
     "maps": [
         {
@@ -2028,6 +2029,17 @@
                 },
                 {
                     "name": "",
+                    "id": "36feaa06-47db-4cf6-b096-338645fde08b",
+                    "path": "<RawMouse>/positionpx",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Point",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "57909bb4-1088-4975-9227-ecc87a305257",
                     "path": "<Mouse>/leftButton",
                     "interactions": "",
@@ -2052,6 +2064,17 @@
                     "name": "",
                     "id": "d6fd3bb5-c747-4eba-b599-1c6d7c738e2a",
                     "path": "<Mouse>/scroll",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ScrollWheel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "4d26aaa6-3430-4b70-ad45-c2fe961ef1d0",
+                    "path": "<RawMouse>/wheel",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -2388,6 +2411,17 @@
                     "action": "Click",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "94d0ca12-34d7-4fe3-ad7e-ea18509c724c",
+                    "path": "<RawMouse>/left",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Click",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         },
@@ -2532,6 +2566,39 @@
                     "isPartOfComposite": true
                 },
                 {
+                    "name": "One Modifier",
+                    "id": "3dd6d49a-f8a7-48b2-8b56-226b158e143d",
+                    "path": "OneModifier",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Tap Start Position",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "b4ac9826-7e57-4650-9098-1adaad569ec4",
+                    "path": "<RawMouse>/left",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Tap Start Position",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "bafcaa01-5d30-42b6-a7f8-4d605fa319f9",
+                    "path": "<RawMouse>/positionpx",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Tap Start Position",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
                     "name": "",
                     "id": "eb175a82-fad6-4249-bc9f-a6c9acee4436",
                     "path": "<TouchscreenGestureInputController>/dragCurrentPosition",
@@ -2568,6 +2635,39 @@
                     "name": "binding",
                     "id": "7e88eed9-d5b6-4c3a-9dd7-ac83c45fced3",
                     "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Drag Current Position",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "One Modifier",
+                    "id": "aa75d791-1e1d-46d8-89a6-d807a71453ed",
+                    "path": "OneModifier",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Drag Current Position",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "e0c92adb-56ca-433b-9ea0-38aaf743cb97",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Drag Current Position",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "04903038-a17d-4cb3-b817-f271e12340a7",
+                    "path": "",
                     "interactions": "",
                     "processors": "",
                     "groups": "",

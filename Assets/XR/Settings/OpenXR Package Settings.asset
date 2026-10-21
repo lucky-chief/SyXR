@@ -150,9 +150,6 @@ MonoBehaviour:
   m_Name: Android
   m_EditorClassIdentifier: 
   features:
-  - {fileID: 4519088417437433503}
-  - {fileID: 2005319662050729852}
-  - {fileID: -2660071221241080749}
   - {fileID: 8658362778125094433}
   - {fileID: -2943042846131138901}
   - {fileID: -8050445464316517663}
@@ -174,6 +171,9 @@ MonoBehaviour:
   - {fileID: -202814499335678327}
   - {fileID: -1066406030990587573}
   - {fileID: -4337659001070139304}
+  - {fileID: 4519088417437433503}
+  - {fileID: -2660071221241080749}
+  - {fileID: 2005319662050729852}
   - {fileID: 3018539734420843204}
   - {fileID: 3133800980235017081}
   - {fileID: -664973786762026225}
@@ -391,7 +391,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 466023e5535785e4e9a187b966455172, type: 3}
   m_Name: RawMouseProfile Standalone
   m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawMouseProfile
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Shiyan Raw Mouse
   version: 0.1.0
   featureIdInternal: com.shiyan.openxr.rawmouse
@@ -1238,7 +1238,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f95fecfbfe13824c949b47f2e3ee33c, type: 3}
   m_Name: RawKeyboardProfile Standalone
   m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawKeyboardProfile
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Shiyan Raw Keyboard
   version: 0.1.0
   featureIdInternal: com.shiyan.openxr.rawkeyboard
@@ -1260,7 +1260,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 056125dd64c0ed540b40a4af74f7b495, type: 3}
   m_Name: RuntimeDebuggerOpenXRFeature Standalone
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Runtime Debugger
   version: 1
   featureIdInternal: com.unity.openxr.features.runtimedebugger

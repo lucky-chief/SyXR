@@ -6,14 +6,16 @@ using UnityEngine.Serialization;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Inputs;
+using UnityEngine.XR.Interaction.Toolkit.Inputs.Readers;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
 namespace com.unity.shiyantech.xr
 {
     /// <summary>
-    /// Interprets screen presses and gestures by using actions from the  Input System and converting them
-    /// into XR Interaction states, such as Select. It applies the current press position on the screen to
-    /// move the transform of the GameObject.
+    /// Interprets screen presses and gestures by using actions from the Input System and applying
+    /// the resulting ray pose/select state directly to the XRRayInteractor on the same GameObject.
+    /// This is the XRI 3.x replacement for the deprecated XRBaseController-based screen space controller.
     /// </summary>
     /// <remarks>
     /// This behavior requires that the Input System is enabled in the <b>Active Input Handling</b>
@@ -21,10 +23,10 @@ namespace com.unity.shiyantech.xr
     /// Each input action must also be enabled to read the current value of the action. Referenced
     /// input actions in an Input Action Asset are not enabled by default.
     /// </remarks>
-    /// <seealso cref="XRBaseController"/>
     /// <seealso cref="TouchscreenGestureInputController"/>
     [AddComponentMenu("XR/XR Screen Space Controller", 11)]
-    public partial class XRScreenSpaceController : XRBaseController
+    [DefaultExecutionOrder(XRInteractionUpdateOrder.k_ScreenSpaceRayPoseDriver)]
+    public partial class XRScreenSpaceController : MonoBehaviour, IXRInputButtonReader
     {
         [Header("Touchscreen Gesture Actions")]
         [SerializeField]
@@ -238,9 +240,12 @@ namespace com.unity.shiyantech.xr
         TouchscreenGestureInputController m_GestureInputController;
 #endif
         bool m_HasCheckedDisabledTrackingInputReferenceActions;
-        bool m_HasCheckedDisabledInputReferenceActions;
         UIInputModule m_UIInputModule;
-        UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor m_Interactor;
+        XRRayInteractor m_Interactor;
+
+        bool m_SelectPressed;
+        bool m_SelectPressedThisFrame;
+        bool m_SelectReleasedThisFrame;
 
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
@@ -252,32 +257,82 @@ namespace com.unity.shiyantech.xr
                 Debug.LogWarning($"Could not find associated {nameof(ScreenPointToRayHelper)} in scene." +
                     $"This {nameof(XRScreenSpaceController)} will be disabled.", this);
                 enabled = false;
+                return;
+            }
+
+            // 再配置一次：确保 XRRayInteractor 的 OnEnable 没有把 select/uiPress 的输入源覆盖掉。
+            if (m_Interactor == null)
+                m_Interactor = GetComponent<XRRayInteractor>();
+            if (m_Interactor != null)
+            {
+                ConfigureButtonReader(m_Interactor.selectInput);
+                ConfigureButtonReader(m_Interactor.uiPressInput);
             }
         }
 
-        /// <inheritdoc />
-        protected override void OnEnable()
+        void OnEnable()
         {
-            base.OnEnable();
-            m_Interactor = GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactors.XRRayInteractor>();
+            m_Interactor = GetComponent<XRRayInteractor>();
+            if (m_Interactor != null)
+            {
+                ConfigureButtonReader(m_Interactor.selectInput);
+                ConfigureButtonReader(m_Interactor.uiPressInput);
+            }
+
             EnableAllDirectActions();
             InitializeTouchscreenGestureController();
         }
 
-        /// <inheritdoc />
-        protected override void OnDisable()
+        void OnDisable()
         {
-            base.OnDisable();
             DisableAllDirectActions();
             DestroyTouchscreenGestureController();
             m_UIInputModule = null;
         }
 
-        /// <inheritdoc />
-        protected override void UpdateTrackingInput(XRControllerState controllerState)
+        void ConfigureButtonReader(XRInputButtonReader reader)
         {
-            base.UpdateTrackingInput(controllerState);
-            if (controllerState == null || IsPointerOverScreenSpaceCanvas())
+            if (reader == null)
+                return;
+
+            reader.inputSourceMode = XRInputButtonReader.InputSourceMode.ObjectReference;
+            reader.SetObjectReference(this);
+        }
+
+        void Update()
+        {
+            UpdateSelectState();
+            UpdatePose();
+            UpdateScaleDelta();
+        }
+
+        void UpdateSelectState()
+        {
+            // 本设备 dongle 的“原地点击”不进 Input System，所以同时读 MouseButtonBridge。
+            bool pressed = MouseButtonBridge.IsLeftPressed() || MouseButtonBridge.ConsumeLeftClick();
+
+            if (!IsPointerOverScreenSpaceCanvas())
+            {
+                var selectAction = m_MouseSelectAction.action;
+                if (selectAction != null &&
+                    (selectAction.IsPressed() || selectAction.WasPressedThisFrame()))
+                {
+                    pressed = true;
+                }
+            }
+            else
+            {
+                pressed = false;
+            }
+
+            m_SelectPressedThisFrame = pressed && !m_SelectPressed;
+            m_SelectReleasedThisFrame = !pressed && m_SelectPressed;
+            m_SelectPressed = pressed;
+        }
+
+        void UpdatePose()
+        {
+            if (IsPointerOverScreenSpaceCanvas())
                 return;
 
             // Warn the user if using referenced actions and they are disabled
@@ -298,80 +353,34 @@ namespace com.unity.shiyantech.xr
                 m_HasCheckedDisabledTrackingInputReferenceActions = true;
             }
 
-            if (TryGetScreenPosition(out var screenPos))
-            {
-                // 屏幕像素 → 世界坐标。这里要的只是方向，传多远的距离都不影响结果
-                // （ScreenToWorldPoint 出来的点会被归一化成方向），所以直接借用交互器的射线长度，
-                // 让下面那条调试绿线和射线实际能打到多远保持一致
-                float rayLength = m_Interactor != null ? m_Interactor.maxRaycastDistance : Mathf.Abs(m_ScreenPointToRayHelper.zOffset);
-                var screenWorldPoint = m_ScreenPointToRayHelper.ScreenToWorldPoint(
-                    new Vector3(screenPos.x, screenPos.y, 0f),
-                    rayLength);
-
-                // 射线起点用 helper 当帧的视点：Constant 是 transform.position + forward * zOffset，
-                // 左右眼 / 眉心则是对应眼位（ScreenToWorldPoint 内的 RefreshMatrices 已经算好）
-                var viewPosition = m_ScreenPointToRayHelper.viewPosition;
-                var ray = new Ray(viewPosition, (screenWorldPoint - viewPosition).normalized);
-
-                // 在 Scene 视图里画出这条射线，方便调试（Debug.DrawRay 只在 Editor / Development Build 生效）
-                Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.green);
-
-                controllerState.position = transform.parent != null ? transform.parent.InverseTransformPoint(ray.origin) : ray.origin;
-                controllerState.rotation = Quaternion.LookRotation(ray.direction);
-                controllerState.inputTrackingState = InputTrackingState.Position | InputTrackingState.Rotation;
-                controllerState.isTracked = true;
-            }
-            else
-            {
-                controllerState.inputTrackingState = InputTrackingState.None;
-                controllerState.isTracked = false;
-            }
-        }
-
-        /// <inheritdoc />
-        protected override void UpdateInput(XRControllerState controllerState)
-        {
-            base.UpdateInput(controllerState);
-            //Debug.Log($"IsMouseSelectPressed: {IsMouseSelectPressed()}");
-            if (controllerState == null || IsPointerOverScreenSpaceCanvas())
+            if (!TryGetScreenPosition(out var screenPos))
                 return;
 
-            // Warn the user if using referenced actions and they are disabled
-            if (!m_HasCheckedDisabledInputReferenceActions &&
-                (m_TwistDeltaRotationAction.action != null || m_DragCurrentPositionAction.action != null || m_TapStartPositionAction.action != null))
-            {
-                if (IsDisabledReferenceAction(m_TwistDeltaRotationAction) ||
-                    IsDisabledReferenceAction(m_DragCurrentPositionAction) ||
-                    IsDisabledReferenceAction(m_TapStartPositionAction))
-                {
-                    Debug.LogWarning("'Enable Input Actions' is enabled, but the Tap, Drag, Pinch, and/or Twist Action is disabled." +
-                        " The controller input will not be handled correctly until the Input Actions are enabled." +
-                        " Input Actions in an Input Action Asset must be explicitly enabled to read the current value of the action." +
-                        " The Input Action Manager behavior can be added to a GameObject in a Scene and used to enable all Input Actions in a referenced Input Action Asset.",
-                        this);
-                }
+            // 屏幕像素 → 世界坐标。这里要的只是方向，传多远的距离都不影响结果
+            // （ScreenToWorldPoint 出来的点会被归一化成方向），所以直接借用交互器的射线长度，
+            // 让下面那条调试绿线和射线实际能打到多远保持一致
+            float rayLength = m_Interactor != null ? m_Interactor.maxRaycastDistance : Mathf.Abs(m_ScreenPointToRayHelper.zOffset);
+            var screenWorldPoint = m_ScreenPointToRayHelper.ScreenToWorldPoint(
+                new Vector3(screenPos.x, screenPos.y, 0f),
+                rayLength);
 
-                m_HasCheckedDisabledInputReferenceActions = true;
-            }
+            // 射线起点用 helper 当帧的视点：Constant 是 transform.position + forward * zOffset，
+            // 左右眼 / 眉心则是对应眼位（ScreenToWorldPoint 内的 RefreshMatrices 已经算好）
+            var viewPosition = m_ScreenPointToRayHelper.viewPosition;
+            var ray = new Ray(viewPosition, (screenWorldPoint - viewPosition).normalized);
 
-            controllerState.ResetFrameDependentStates();
+            // 在 Scene 视图里画出这条射线，方便调试（Debug.DrawRay 只在 Editor / Development Build 生效）
+            Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.green);
 
-            // 交互全部收敛到鼠标：左键按下即 select
-            if (IsMouseSelectPressed())
-            {
-                controllerState.selectInteractionState.SetFrameState(true, 1f);
-            }
+            if (transform.parent != null)
+                transform.localPosition = transform.parent.InverseTransformPoint(ray.origin);
             else
-            {
-                controllerState.selectInteractionState.SetFrameState(false, 0f);
-            }
+                transform.position = ray.origin;
+            transform.localRotation = Quaternion.LookRotation(ray.direction);
+        }
 
-            // UI 按下读的是 uiPressInteractionState（XRBaseControllerInteractor.isUISelectActive → XRRayInteractor.model.select），
-            // 它不跟随 select，必须显式同步，否则 UI 只有 hover、点不下去
-            controllerState.uiPressInteractionState.SetFrameState(
-                controllerState.selectInteractionState.active,
-                controllerState.selectInteractionState.value);
-
+        void UpdateScaleDelta()
+        {
             if (m_UseRotationThreshold && TryGetAbsoluteValue(m_TwistDeltaRotationAction.action, out var absRotationValue) && absRotationValue >= m_RotationThreshold)
             {
                 scaleDelta = 0f;
@@ -380,6 +389,20 @@ namespace com.unity.shiyantech.xr
             {
                 scaleDelta = m_PinchGapDeltaAction.action != null ? m_PinchGapDeltaAction.action.ReadValue<float>() / Screen.dpi : 0f;
             }
+        }
+
+        public bool ReadIsPerformed() => m_SelectPressed;
+
+        public bool ReadWasPerformedThisFrame() => m_SelectPressedThisFrame;
+
+        public bool ReadWasCompletedThisFrame() => m_SelectReleasedThisFrame;
+
+        public float ReadValue() => m_SelectPressed ? 1f : 0f;
+
+        public bool TryReadValue(out float value)
+        {
+            value = m_SelectPressed ? 1f : 0f;
+            return true;
         }
 
         /// <summary>
@@ -401,20 +424,6 @@ namespace com.unity.shiyantech.xr
 
             screenPosition = default;
             return false;
-        }
-
-        /// <summary>
-        /// 鼠标左键是否按下。优先用 action 读；
-        /// 本设备 dongle 的“原地点击”不进 Input System（见对话记录），Android 侧由 MouseButtonBridge 提供，
-        /// 不依赖旧输入系统。
-        /// </summary>
-        bool IsMouseSelectPressed()
-        {
-            var selectAction = m_MouseSelectAction.action;
-            if (selectAction != null && (selectAction.IsPressed() || selectAction.WasPressedThisFrame()))
-                return true;
-
-            return MouseButtonBridge.IsLeftPressed() || MouseButtonBridge.ConsumeLeftClick();
         }
 
         static bool TryGetAbsoluteValue(InputAction action, out float value)
