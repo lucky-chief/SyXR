@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Unity.XR.CoreUtils;
 using com.unity.shiyantech.xr;
 
 namespace com.shiyanxr.editor
@@ -8,12 +9,26 @@ namespace com.shiyanxr.editor
     /// <summary>
     /// Scene View 里的光学参考图形：会聚面（零视差面）与左右眼视锥。
     ///
-    /// 几何都由 Project Settings &gt; 视延XR项目配置 里的屏幕物理尺寸，加上面板上的
-    /// 会聚面距离 / 瞳距 / 颜色决定。会聚面的中心与尺寸也供 ShiyanXRMenuTools 摆放画布使用，
+    /// 几何都由 Project Settings &gt; 视延XR项目配置 里的屏幕物理尺寸（再乘 XROrigin 缩放），
+    /// 加上面板上的会聚面距离 / 瞳距 / 颜色决定。会聚面的中心与尺寸也供 ShiyanXRMenuTools 摆放画布使用，
     /// 两处共用同一套定义，避免各算一遍而漂移。
     ///
     /// 会聚面就是裸眼 3D 屏幕本身，锚在 Main Camera 的 Transform 位置上，不随会聚面距离移动；
     /// 会聚面距离是“眼睛到屏幕”的观看距离，改变它时移动的是左右眼的位置。
+    ///
+    /// 会聚面的世界尺寸不是固定的物理尺寸，而是“项目设置里的屏幕物理尺寸 × XROrigin 的缩放 k”。
+    /// 这是把 0 视差面当作虚拟屏幕、让它随场景一起放大的模型：
+    /// k=1 时面刚好等于物理屏幕；k=2 时面在世界上大一倍，同一物体在画面里按 1/k 缩小。
+    /// 眼睛到屏幕的距离 d 与瞳距仍取面板上的物理值，所以内容看上去是等比缩小的，
+    /// 而物体本身可以保持真实尺寸，不受“缩得很小导致光影变差”的影响。
+    ///
+    /// 由此得到的精确换算（u 为相对 0 视差面的有符号深度，朝观者/出屏为正、入屏为负；
+    /// u' 是观者实际看到的深度；d 是眼到屏幕的距离）：
+    ///     u' = u·d / (k·d - (k-1)·u)
+    ///     u  = k·d·u' / (d + (k-1)·u')
+    /// 近屏（|u| 远小于 d）时 u' ≈ u/k。所以同一个舒适出屏深度 u' 能放下的世界深度约是 k 倍，
+    /// 横向尺寸也随面放大 k 倍 —— 小出屏深度下，世界空间里可用的出屏体积约按 k³ 增长，
+    /// 而物体本身不必缩小。
     ///
     /// 编辑器的非播放模式下还会改写 Main Camera 的 V/P：视点放在左右眼中点（眉心），
     /// 投影用与左右眼同源的离轴矩阵，视锥在会聚面处正好覆盖屏幕。播放模式与构建里不生效。
@@ -55,12 +70,45 @@ namespace com.shiyanxr.editor
         internal static Vector3 ConvergencePlaneCenter(Camera camera) =>
             camera.transform.position;
 
-        /// <summary>会聚面的半宽 / 半高（米），取项目设置里的屏幕物理尺寸。</summary>
-        static void ConvergencePlaneHalfSize(out float halfWidth, out float halfHeight)
+        /// <summary>
+        /// 场景世界缩放 k：取 Main Camera 所在 XROrigin 的统一缩放（lossyScale 的 x 分量）。
+        ///
+        /// 0 视差面的世界尺寸 = 项目设置里的屏幕物理尺寸 × k，所以改 XROrigin 的 scale
+        /// 就能直接改变预览里 0 视差面的大小；k 越大，面越大、画面里的物体越小。
+        /// 没有 XROrigin（或相机不在其下）时按 1 处理，保持旧行为。
+        /// XR 的缩放只应是等比缩放；非等比时以 x 为准。k 要做除数，夹一个正的下限。
+        /// </summary>
+        internal static float XROriginScale(Camera camera)
+        {
+            if (camera == null) return 1f;
+
+            var origin = camera.GetComponentInParent<XROrigin>();
+            if (origin == null) return 1f;
+
+            float scale = origin.transform.lossyScale.x;
+            if (float.IsNaN(scale) || float.IsInfinity(scale)) return 1f;
+
+            return Mathf.Max(Mathf.Abs(scale), 1e-4f);
+        }
+
+        /// <summary>
+        /// 0 视差面的有效世界尺寸（米）：项目设置里的屏幕物理尺寸 × XROrigin 缩放。
+        /// 画布工具也用它，保证摆到面上的画布与预览里看到的面同尺寸。
+        /// </summary>
+        internal static void EffectiveConvergencePlaneSize(Camera camera, out float width, out float height)
         {
             var settings = ShiyanXRProjectSettings.Instance;
-            halfWidth = settings.ScreenPhysicalWidth * 0.5f;
-            halfHeight = settings.ScreenPhysicalHeight * 0.5f;
+            float scale = XROriginScale(camera);
+            width = settings.ScreenPhysicalWidth * scale;
+            height = settings.ScreenPhysicalHeight * scale;
+        }
+
+        /// <summary>会聚面的半宽 / 半高（米）：屏幕物理尺寸 × XROrigin 缩放的一半。</summary>
+        static void ConvergencePlaneHalfSize(Camera camera, out float halfWidth, out float halfHeight)
+        {
+            EffectiveConvergencePlaneSize(camera, out float width, out float height);
+            halfWidth = width * 0.5f;
+            halfHeight = height * 0.5f;
         }
 
         /// <summary>
@@ -78,10 +126,11 @@ namespace com.shiyanxr.editor
         /// <summary>
         /// 某个眼位在“距眼睛 atDistance”处的视锥四条边界（相机空间 x/y）。
         /// 会聚面与视锥共用这一处几何：atDistance 取观看距离时，边界正好落在屏幕（会聚面）上。
+        /// 面的大小已含 XROrigin 缩放 k，所以投影也按 k 放大：k 越大，画面里的物体越小。
         /// </summary>
-        static void EyeFrustumEdges(float eyeSign, float atDistance, out float left, out float right, out float top, out float bottom)
+        static void EyeFrustumEdges(Camera camera, float eyeSign, float atDistance, out float left, out float right, out float top, out float bottom)
         {
-            ConvergencePlaneHalfSize(out float halfWidth, out float halfHeight);
+            ConvergencePlaneHalfSize(camera, out float halfWidth, out float halfHeight);
             float offset = eyeSign * ShiyanXREyePanel.State.interocularDistance * 0.5f;
             float scale = atDistance / ConvergencePlaneDistance();
 
@@ -94,7 +143,7 @@ namespace com.shiyanxr.editor
         /// <summary>某个眼位在“距眼睛 atDistance”处的视锥四角（世界坐标），顺序：左下、右下、右上、左上。</summary>
         static void EyeFrustumCorners(Camera camera, float eyeSign, float atDistance, Vector3[] corners)
         {
-            EyeFrustumEdges(eyeSign, atDistance, out float left, out float right, out float top, out float bottom);
+            EyeFrustumEdges(camera, eyeSign, atDistance, out float left, out float right, out float top, out float bottom);
 
             Transform cameraTransform = camera.transform;
             Vector3 center = EyePosition(cameraTransform, eyeSign) + cameraTransform.forward * atDistance;
@@ -165,7 +214,7 @@ namespace com.shiyanxr.editor
 
             // 与左右眼视锥共用边界定义：atDistance 取 near，视锥在会聚面处正好覆盖屏幕
             float near = camera.nearClipPlane;
-            EyeFrustumEdges(k_CenterEyeSign, near, out float left, out float right, out float top, out float bottom);
+            EyeFrustumEdges(camera, k_CenterEyeSign, near, out float left, out float right, out float top, out float bottom);
             camera.projectionMatrix = Matrix4x4.Frustum(left, right, bottom, top, near, camera.farClipPlane);
         }
 
@@ -187,7 +236,8 @@ namespace com.shiyanxr.editor
         }
 
         /// <summary>
-        /// 会聚面（零视差面）：固定在相机位置，也就是裸眼 3D 屏幕所在处，尺寸取项目设置的屏幕物理尺寸。
+        /// 会聚面（零视差面）：固定在相机位置，也就是裸眼 3D 屏幕所在处，
+        /// 尺寸取“项目设置的屏幕物理尺寸 × XROrigin 缩放”。
         ///
         /// 注意面心取相机的 position 而不是眼位：视锥左右边界是 (-halfWidth - offset)
         /// 与 (halfWidth - offset)，offset 正好抵消——所以这个面永远以两眼中点为中心，它就是零视差面。
@@ -199,7 +249,7 @@ namespace com.shiyanxr.editor
         /// </summary>
         static void DrawConvergencePlane(Camera camera)
         {
-            ConvergencePlaneHalfSize(out float halfWidth, out float halfHeight);
+            ConvergencePlaneHalfSize(camera, out float halfWidth, out float halfHeight);
 
             Transform cameraTransform = camera.transform;
             Vector3 center = ConvergencePlaneCenter(camera);
