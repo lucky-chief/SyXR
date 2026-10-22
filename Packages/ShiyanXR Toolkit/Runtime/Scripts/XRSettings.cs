@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEngine.XR;
 #if !UNITY_EDITOR && UNITY_ANDROID
@@ -63,3 +64,4 @@ public class XRSettings : MonoBehaviour
         Cursor.visible = false;
     }
 }
+#endif
