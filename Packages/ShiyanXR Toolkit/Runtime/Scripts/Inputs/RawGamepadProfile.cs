@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.Layouts;
@@ -34,16 +35,16 @@ namespace Shiyan.OpenXR.RawInput
     {
         public const string featureId = "com.shiyan.openxr.rawgamepad";
         public const string profile = "/interaction_profiles/microsoft/xbox_controller";
-        const string kDeviceName = "Shiyan Raw Gamepad (OpenXR)";
+        const string kDeviceName = "Shiyan Raw Gamepad OpenXR";
 
         [Preserve, InputControlLayout(displayName = kDeviceName)]
-        public class RawGamepad : UnityEngine.InputSystem.InputDevice
+        public class RawGamepad : OpenXRDevice
         {
-            [Preserve, InputControl(name = "leftstick", layout = "Stick", displayName = "Left Stick")]
-            public StickControl leftStick { get; private set; }
+            [Preserve, InputControl(name = "leftstick", layout = "Vector2", displayName = "Left Stick")]
+            public Vector2Control leftStick { get; private set; }
 
-            [Preserve, InputControl(name = "rightstick", layout = "Stick", displayName = "Right Stick")]
-            public StickControl rightStick { get; private set; }
+            [Preserve, InputControl(name = "rightstick", layout = "Vector2", displayName = "Right Stick")]
+            public Vector2Control rightStick { get; private set; }
 
             [Preserve, InputControl(name = "lefttrigger", layout = "Axis", displayName = "Left Trigger")]
             public AxisControl leftTrigger { get; private set; }
@@ -96,8 +97,9 @@ namespace Shiyan.OpenXR.RawInput
             protected override void FinishSetup()
             {
                 base.FinishSetup();
-                leftStick = GetChildControl<StickControl>("leftstick");
-                rightStick = GetChildControl<StickControl>("rightstick");
+                Debug.Log("[ShiyanRawInput] RawGamepad FinishSetup (device created)");
+                leftStick = GetChildControl<Vector2Control>("leftstick");
+                rightStick = GetChildControl<Vector2Control>("rightstick");
                 leftTrigger = GetChildControl<AxisControl>("lefttrigger");
                 rightTrigger = GetChildControl<AxisControl>("righttrigger");
                 buttonA = GetChildControl<ButtonControl>("buttona");
@@ -124,6 +126,7 @@ namespace Shiyan.OpenXR.RawInput
 
         protected override void RegisterDeviceLayout()
         {
+            Debug.Log("[ShiyanRawInput] RawGamepad RegisterDeviceLayout");
             InputSystem.RegisterLayout(typeof(RawGamepad),
                 matches: new InputDeviceMatcher()
                     .WithInterface(XRUtilities.InterfaceMatchAnyVersion)
@@ -137,6 +140,7 @@ namespace Shiyan.OpenXR.RawInput
 
         protected override void RegisterActionMapsWithRuntime()
         {
+            Debug.Log("[ShiyanRawInput] RawGamepad RegisterActionMapsWithRuntime");
             AddActionMap(new ActionMapConfig
             {
                 name = "shiyanrawgamepad",

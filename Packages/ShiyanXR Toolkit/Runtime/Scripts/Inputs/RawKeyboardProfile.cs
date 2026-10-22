@@ -1,6 +1,7 @@
 ﻿// Curated key set for the first Unity integration. The runtime accepts a wider set of
 // keys (see docs/Windows适配.md); add more controls/actions here as needed.
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.Layouts;
@@ -34,290 +35,291 @@ namespace Shiyan.OpenXR.RawInput
     {
         public const string featureId = "com.shiyan.openxr.rawkeyboard";
         public const string profile = "/interaction_profiles/shiyan/raw_keyboard";
-        const string kDeviceName = "Shiyan Raw Keyboard (OpenXR)";
+        const string kDeviceName = "Shiyan Raw Keyboard OpenXR";
 
         [Preserve, InputControlLayout(displayName = kDeviceName)]
-        public class RawKeyboard : UnityEngine.InputSystem.InputDevice
+        public class RawKeyboard : OpenXRDevice
         {
-            [Preserve, InputControl(name = "keya", layout = "Key", bit = (int)Key.A, displayName = "A")]
-            public KeyControl keyA { get; private set; }
+            [Preserve, InputControl(name = "keya", layout = "Button", displayName = "A")]
+            public ButtonControl keyA { get; private set; }
 
-            [Preserve, InputControl(name = "keyb", layout = "Key", bit = (int)Key.B, displayName = "B")]
-            public KeyControl keyB { get; private set; }
+            [Preserve, InputControl(name = "keyb", layout = "Button", displayName = "B")]
+            public ButtonControl keyB { get; private set; }
 
-            [Preserve, InputControl(name = "keyc", layout = "Key", bit = (int)Key.C, displayName = "C")]
-            public KeyControl keyC { get; private set; }
+            [Preserve, InputControl(name = "keyc", layout = "Button", displayName = "C")]
+            public ButtonControl keyC { get; private set; }
 
-            [Preserve, InputControl(name = "keyd", layout = "Key", bit = (int)Key.D, displayName = "D")]
-            public KeyControl keyD { get; private set; }
+            [Preserve, InputControl(name = "keyd", layout = "Button", displayName = "D")]
+            public ButtonControl keyD { get; private set; }
 
-            [Preserve, InputControl(name = "keye", layout = "Key", bit = (int)Key.E, displayName = "E")]
-            public KeyControl keyE { get; private set; }
+            [Preserve, InputControl(name = "keye", layout = "Button", displayName = "E")]
+            public ButtonControl keyE { get; private set; }
 
-            [Preserve, InputControl(name = "keyf", layout = "Key", bit = (int)Key.F, displayName = "F")]
-            public KeyControl keyF { get; private set; }
+            [Preserve, InputControl(name = "keyf", layout = "Button", displayName = "F")]
+            public ButtonControl keyF { get; private set; }
 
-            [Preserve, InputControl(name = "keyg", layout = "Key", bit = (int)Key.G, displayName = "G")]
-            public KeyControl keyG { get; private set; }
+            [Preserve, InputControl(name = "keyg", layout = "Button", displayName = "G")]
+            public ButtonControl keyG { get; private set; }
 
-            [Preserve, InputControl(name = "keyh", layout = "Key", bit = (int)Key.H, displayName = "H")]
-            public KeyControl keyH { get; private set; }
+            [Preserve, InputControl(name = "keyh", layout = "Button", displayName = "H")]
+            public ButtonControl keyH { get; private set; }
 
-            [Preserve, InputControl(name = "keyi", layout = "Key", bit = (int)Key.I, displayName = "I")]
-            public KeyControl keyI { get; private set; }
+            [Preserve, InputControl(name = "keyi", layout = "Button", displayName = "I")]
+            public ButtonControl keyI { get; private set; }
 
-            [Preserve, InputControl(name = "keyj", layout = "Key", bit = (int)Key.J, displayName = "J")]
-            public KeyControl keyJ { get; private set; }
+            [Preserve, InputControl(name = "keyj", layout = "Button", displayName = "J")]
+            public ButtonControl keyJ { get; private set; }
 
-            [Preserve, InputControl(name = "keyk", layout = "Key", bit = (int)Key.K, displayName = "K")]
-            public KeyControl keyK { get; private set; }
+            [Preserve, InputControl(name = "keyk", layout = "Button", displayName = "K")]
+            public ButtonControl keyK { get; private set; }
 
-            [Preserve, InputControl(name = "keyl", layout = "Key", bit = (int)Key.L, displayName = "L")]
-            public KeyControl keyL { get; private set; }
+            [Preserve, InputControl(name = "keyl", layout = "Button", displayName = "L")]
+            public ButtonControl keyL { get; private set; }
 
-            [Preserve, InputControl(name = "keym", layout = "Key", bit = (int)Key.M, displayName = "M")]
-            public KeyControl keyM { get; private set; }
+            [Preserve, InputControl(name = "keym", layout = "Button", displayName = "M")]
+            public ButtonControl keyM { get; private set; }
 
-            [Preserve, InputControl(name = "keyn", layout = "Key", bit = (int)Key.N, displayName = "N")]
-            public KeyControl keyN { get; private set; }
+            [Preserve, InputControl(name = "keyn", layout = "Button", displayName = "N")]
+            public ButtonControl keyN { get; private set; }
 
-            [Preserve, InputControl(name = "keyo", layout = "Key", bit = (int)Key.O, displayName = "O")]
-            public KeyControl keyO { get; private set; }
+            [Preserve, InputControl(name = "keyo", layout = "Button", displayName = "O")]
+            public ButtonControl keyO { get; private set; }
 
-            [Preserve, InputControl(name = "keyp", layout = "Key", bit = (int)Key.P, displayName = "P")]
-            public KeyControl keyP { get; private set; }
+            [Preserve, InputControl(name = "keyp", layout = "Button", displayName = "P")]
+            public ButtonControl keyP { get; private set; }
 
-            [Preserve, InputControl(name = "keyq", layout = "Key", bit = (int)Key.Q, displayName = "Q")]
-            public KeyControl keyQ { get; private set; }
+            [Preserve, InputControl(name = "keyq", layout = "Button", displayName = "Q")]
+            public ButtonControl keyQ { get; private set; }
 
-            [Preserve, InputControl(name = "keyr", layout = "Key", bit = (int)Key.R, displayName = "R")]
-            public KeyControl keyR { get; private set; }
+            [Preserve, InputControl(name = "keyr", layout = "Button", displayName = "R")]
+            public ButtonControl keyR { get; private set; }
 
-            [Preserve, InputControl(name = "keys", layout = "Key", bit = (int)Key.S, displayName = "S")]
-            public KeyControl keyS { get; private set; }
+            [Preserve, InputControl(name = "keys", layout = "Button", displayName = "S")]
+            public ButtonControl keyS { get; private set; }
 
-            [Preserve, InputControl(name = "keyt", layout = "Key", bit = (int)Key.T, displayName = "T")]
-            public KeyControl keyT { get; private set; }
+            [Preserve, InputControl(name = "keyt", layout = "Button", displayName = "T")]
+            public ButtonControl keyT { get; private set; }
 
-            [Preserve, InputControl(name = "keyu", layout = "Key", bit = (int)Key.U, displayName = "U")]
-            public KeyControl keyU { get; private set; }
+            [Preserve, InputControl(name = "keyu", layout = "Button", displayName = "U")]
+            public ButtonControl keyU { get; private set; }
 
-            [Preserve, InputControl(name = "keyv", layout = "Key", bit = (int)Key.V, displayName = "V")]
-            public KeyControl keyV { get; private set; }
+            [Preserve, InputControl(name = "keyv", layout = "Button", displayName = "V")]
+            public ButtonControl keyV { get; private set; }
 
-            [Preserve, InputControl(name = "keyw", layout = "Key", bit = (int)Key.W, displayName = "W")]
-            public KeyControl keyW { get; private set; }
+            [Preserve, InputControl(name = "keyw", layout = "Button", displayName = "W")]
+            public ButtonControl keyW { get; private set; }
 
-            [Preserve, InputControl(name = "keyx", layout = "Key", bit = (int)Key.X, displayName = "X")]
-            public KeyControl keyX { get; private set; }
+            [Preserve, InputControl(name = "keyx", layout = "Button", displayName = "X")]
+            public ButtonControl keyX { get; private set; }
 
-            [Preserve, InputControl(name = "keyy", layout = "Key", bit = (int)Key.Y, displayName = "Y")]
-            public KeyControl keyY { get; private set; }
+            [Preserve, InputControl(name = "keyy", layout = "Button", displayName = "Y")]
+            public ButtonControl keyY { get; private set; }
 
-            [Preserve, InputControl(name = "keyz", layout = "Key", bit = (int)Key.Z, displayName = "Z")]
-            public KeyControl keyZ { get; private set; }
+            [Preserve, InputControl(name = "keyz", layout = "Button", displayName = "Z")]
+            public ButtonControl keyZ { get; private set; }
 
-            [Preserve, InputControl(name = "numzero", layout = "Key", bit = (int)Key.Digit0, displayName = "0")]
-            public KeyControl numZero { get; private set; }
+            [Preserve, InputControl(name = "numzero", layout = "Button", displayName = "0")]
+            public ButtonControl numZero { get; private set; }
 
-            [Preserve, InputControl(name = "numone", layout = "Key", bit = (int)Key.Digit1, displayName = "1")]
-            public KeyControl numOne { get; private set; }
+            [Preserve, InputControl(name = "numone", layout = "Button", displayName = "1")]
+            public ButtonControl numOne { get; private set; }
 
-            [Preserve, InputControl(name = "numtwo", layout = "Key", bit = (int)Key.Digit2, displayName = "2")]
-            public KeyControl numTwo { get; private set; }
+            [Preserve, InputControl(name = "numtwo", layout = "Button", displayName = "2")]
+            public ButtonControl numTwo { get; private set; }
 
-            [Preserve, InputControl(name = "numthree", layout = "Key", bit = (int)Key.Digit3, displayName = "3")]
-            public KeyControl numThree { get; private set; }
+            [Preserve, InputControl(name = "numthree", layout = "Button", displayName = "3")]
+            public ButtonControl numThree { get; private set; }
 
-            [Preserve, InputControl(name = "numfour", layout = "Key", bit = (int)Key.Digit4, displayName = "4")]
-            public KeyControl numFour { get; private set; }
+            [Preserve, InputControl(name = "numfour", layout = "Button", displayName = "4")]
+            public ButtonControl numFour { get; private set; }
 
-            [Preserve, InputControl(name = "numfive", layout = "Key", bit = (int)Key.Digit5, displayName = "5")]
-            public KeyControl numFive { get; private set; }
+            [Preserve, InputControl(name = "numfive", layout = "Button", displayName = "5")]
+            public ButtonControl numFive { get; private set; }
 
-            [Preserve, InputControl(name = "numsix", layout = "Key", bit = (int)Key.Digit6, displayName = "6")]
-            public KeyControl numSix { get; private set; }
+            [Preserve, InputControl(name = "numsix", layout = "Button", displayName = "6")]
+            public ButtonControl numSix { get; private set; }
 
-            [Preserve, InputControl(name = "numseven", layout = "Key", bit = (int)Key.Digit7, displayName = "7")]
-            public KeyControl numSeven { get; private set; }
+            [Preserve, InputControl(name = "numseven", layout = "Button", displayName = "7")]
+            public ButtonControl numSeven { get; private set; }
 
-            [Preserve, InputControl(name = "numeight", layout = "Key", bit = (int)Key.Digit8, displayName = "8")]
-            public KeyControl numEight { get; private set; }
+            [Preserve, InputControl(name = "numeight", layout = "Button", displayName = "8")]
+            public ButtonControl numEight { get; private set; }
 
-            [Preserve, InputControl(name = "numnine", layout = "Key", bit = (int)Key.Digit9, displayName = "9")]
-            public KeyControl numNine { get; private set; }
+            [Preserve, InputControl(name = "numnine", layout = "Button", displayName = "9")]
+            public ButtonControl numNine { get; private set; }
 
-            [Preserve, InputControl(name = "fone", layout = "Key", bit = (int)Key.F1, displayName = "F1")]
-            public KeyControl fOne { get; private set; }
+            [Preserve, InputControl(name = "fone", layout = "Button", displayName = "F1")]
+            public ButtonControl fOne { get; private set; }
 
-            [Preserve, InputControl(name = "ftwo", layout = "Key", bit = (int)Key.F2, displayName = "F2")]
-            public KeyControl fTwo { get; private set; }
+            [Preserve, InputControl(name = "ftwo", layout = "Button", displayName = "F2")]
+            public ButtonControl fTwo { get; private set; }
 
-            [Preserve, InputControl(name = "fthree", layout = "Key", bit = (int)Key.F3, displayName = "F3")]
-            public KeyControl fThree { get; private set; }
+            [Preserve, InputControl(name = "fthree", layout = "Button", displayName = "F3")]
+            public ButtonControl fThree { get; private set; }
 
-            [Preserve, InputControl(name = "ffour", layout = "Key", bit = (int)Key.F4, displayName = "F4")]
-            public KeyControl fFour { get; private set; }
+            [Preserve, InputControl(name = "ffour", layout = "Button", displayName = "F4")]
+            public ButtonControl fFour { get; private set; }
 
-            [Preserve, InputControl(name = "ffive", layout = "Key", bit = (int)Key.F5, displayName = "F5")]
-            public KeyControl fFive { get; private set; }
+            [Preserve, InputControl(name = "ffive", layout = "Button", displayName = "F5")]
+            public ButtonControl fFive { get; private set; }
 
-            [Preserve, InputControl(name = "fsix", layout = "Key", bit = (int)Key.F6, displayName = "F6")]
-            public KeyControl fSix { get; private set; }
+            [Preserve, InputControl(name = "fsix", layout = "Button", displayName = "F6")]
+            public ButtonControl fSix { get; private set; }
 
-            [Preserve, InputControl(name = "fseven", layout = "Key", bit = (int)Key.F7, displayName = "F7")]
-            public KeyControl fSeven { get; private set; }
+            [Preserve, InputControl(name = "fseven", layout = "Button", displayName = "F7")]
+            public ButtonControl fSeven { get; private set; }
 
-            [Preserve, InputControl(name = "feight", layout = "Key", bit = (int)Key.F8, displayName = "F8")]
-            public KeyControl fEight { get; private set; }
+            [Preserve, InputControl(name = "feight", layout = "Button", displayName = "F8")]
+            public ButtonControl fEight { get; private set; }
 
-            [Preserve, InputControl(name = "fnine", layout = "Key", bit = (int)Key.F9, displayName = "F9")]
-            public KeyControl fNine { get; private set; }
+            [Preserve, InputControl(name = "fnine", layout = "Button", displayName = "F9")]
+            public ButtonControl fNine { get; private set; }
 
-            [Preserve, InputControl(name = "ften", layout = "Key", bit = (int)Key.F10, displayName = "F10")]
-            public KeyControl fTen { get; private set; }
+            [Preserve, InputControl(name = "ften", layout = "Button", displayName = "F10")]
+            public ButtonControl fTen { get; private set; }
 
-            [Preserve, InputControl(name = "feleven", layout = "Key", bit = (int)Key.F11, displayName = "F11")]
-            public KeyControl fEleven { get; private set; }
+            [Preserve, InputControl(name = "feleven", layout = "Button", displayName = "F11")]
+            public ButtonControl fEleven { get; private set; }
 
-            [Preserve, InputControl(name = "ftwelve", layout = "Key", bit = (int)Key.F12, displayName = "F12")]
-            public KeyControl fTwelve { get; private set; }
+            [Preserve, InputControl(name = "ftwelve", layout = "Button", displayName = "F12")]
+            public ButtonControl fTwelve { get; private set; }
 
-            [Preserve, InputControl(name = "space", layout = "Key", bit = (int)Key.Space, displayName = "Space")]
-            public KeyControl space { get; private set; }
+            [Preserve, InputControl(name = "space", layout = "Button", displayName = "Space")]
+            public ButtonControl space { get; private set; }
 
-            [Preserve, InputControl(name = "enter", layout = "Key", bit = (int)Key.Enter, displayName = "Enter")]
-            public KeyControl enter { get; private set; }
+            [Preserve, InputControl(name = "enter", layout = "Button", displayName = "Enter")]
+            public ButtonControl enter { get; private set; }
 
-            [Preserve, InputControl(name = "escape", layout = "Key", bit = (int)Key.Escape, displayName = "Escape")]
-            public KeyControl escape { get; private set; }
+            [Preserve, InputControl(name = "escape", layout = "Button", displayName = "Escape")]
+            public ButtonControl escape { get; private set; }
 
-            [Preserve, InputControl(name = "tab", layout = "Key", bit = (int)Key.Tab, displayName = "Tab")]
-            public KeyControl tab { get; private set; }
+            [Preserve, InputControl(name = "tab", layout = "Button", displayName = "Tab")]
+            public ButtonControl tab { get; private set; }
 
-            [Preserve, InputControl(name = "backspace", layout = "Key", bit = (int)Key.Backspace, displayName = "Backspace")]
-            public KeyControl backspace { get; private set; }
+            [Preserve, InputControl(name = "backspace", layout = "Button", displayName = "Backspace")]
+            public ButtonControl backspace { get; private set; }
 
-            [Preserve, InputControl(name = "delete", layout = "Key", bit = (int)Key.Delete, displayName = "Delete")]
-            public KeyControl delete { get; private set; }
+            [Preserve, InputControl(name = "delete", layout = "Button", displayName = "Delete")]
+            public ButtonControl delete { get; private set; }
 
-            [Preserve, InputControl(name = "insert", layout = "Key", bit = (int)Key.Insert, displayName = "Insert")]
-            public KeyControl insert { get; private set; }
+            [Preserve, InputControl(name = "insert", layout = "Button", displayName = "Insert")]
+            public ButtonControl insert { get; private set; }
 
-            [Preserve, InputControl(name = "home", layout = "Key", bit = (int)Key.Home, displayName = "Home")]
-            public KeyControl home { get; private set; }
+            [Preserve, InputControl(name = "home", layout = "Button", displayName = "Home")]
+            public ButtonControl home { get; private set; }
 
-            [Preserve, InputControl(name = "end", layout = "Key", bit = (int)Key.End, displayName = "End")]
-            public KeyControl end { get; private set; }
+            [Preserve, InputControl(name = "end", layout = "Button", displayName = "End")]
+            public ButtonControl end { get; private set; }
 
-            [Preserve, InputControl(name = "pageup", layout = "Key", bit = (int)Key.PageUp, displayName = "PageUp")]
-            public KeyControl pageUp { get; private set; }
+            [Preserve, InputControl(name = "pageup", layout = "Button", displayName = "PageUp")]
+            public ButtonControl pageUp { get; private set; }
 
-            [Preserve, InputControl(name = "pagedown", layout = "Key", bit = (int)Key.PageDown, displayName = "PageDown")]
-            public KeyControl pageDown { get; private set; }
+            [Preserve, InputControl(name = "pagedown", layout = "Button", displayName = "PageDown")]
+            public ButtonControl pageDown { get; private set; }
 
-            [Preserve, InputControl(name = "leftarrow", layout = "Key", bit = (int)Key.LeftArrow, displayName = "Left Arrow")]
-            public KeyControl leftArrow { get; private set; }
+            [Preserve, InputControl(name = "leftarrow", layout = "Button", displayName = "Left Arrow")]
+            public ButtonControl leftArrow { get; private set; }
 
-            [Preserve, InputControl(name = "rightarrow", layout = "Key", bit = (int)Key.RightArrow, displayName = "Right Arrow")]
-            public KeyControl rightArrow { get; private set; }
+            [Preserve, InputControl(name = "rightarrow", layout = "Button", displayName = "Right Arrow")]
+            public ButtonControl rightArrow { get; private set; }
 
-            [Preserve, InputControl(name = "uparrow", layout = "Key", bit = (int)Key.UpArrow, displayName = "Up Arrow")]
-            public KeyControl upArrow { get; private set; }
+            [Preserve, InputControl(name = "uparrow", layout = "Button", displayName = "Up Arrow")]
+            public ButtonControl upArrow { get; private set; }
 
-            [Preserve, InputControl(name = "downarrow", layout = "Key", bit = (int)Key.DownArrow, displayName = "Down Arrow")]
-            public KeyControl downArrow { get; private set; }
+            [Preserve, InputControl(name = "downarrow", layout = "Button", displayName = "Down Arrow")]
+            public ButtonControl downArrow { get; private set; }
 
-            [Preserve, InputControl(name = "leftshift", layout = "Key", bit = (int)Key.LeftShift, displayName = "Left Shift")]
-            public KeyControl leftShift { get; private set; }
+            [Preserve, InputControl(name = "leftshift", layout = "Button", displayName = "Left Shift")]
+            public ButtonControl leftShift { get; private set; }
 
-            [Preserve, InputControl(name = "rightshift", layout = "Key", bit = (int)Key.RightShift, displayName = "Right Shift")]
-            public KeyControl rightShift { get; private set; }
+            [Preserve, InputControl(name = "rightshift", layout = "Button", displayName = "Right Shift")]
+            public ButtonControl rightShift { get; private set; }
 
-            [Preserve, InputControl(name = "leftctrl", layout = "Key", bit = (int)Key.LeftCtrl, displayName = "Left Ctrl")]
-            public KeyControl leftCtrl { get; private set; }
+            [Preserve, InputControl(name = "leftctrl", layout = "Button", displayName = "Left Ctrl")]
+            public ButtonControl leftCtrl { get; private set; }
 
-            [Preserve, InputControl(name = "rightctrl", layout = "Key", bit = (int)Key.RightCtrl, displayName = "Right Ctrl")]
-            public KeyControl rightCtrl { get; private set; }
+            [Preserve, InputControl(name = "rightctrl", layout = "Button", displayName = "Right Ctrl")]
+            public ButtonControl rightCtrl { get; private set; }
 
-            [Preserve, InputControl(name = "leftalt", layout = "Key", bit = (int)Key.LeftAlt, displayName = "Left Alt")]
-            public KeyControl leftAlt { get; private set; }
+            [Preserve, InputControl(name = "leftalt", layout = "Button", displayName = "Left Alt")]
+            public ButtonControl leftAlt { get; private set; }
 
-            [Preserve, InputControl(name = "rightalt", layout = "Key", bit = (int)Key.RightAlt, displayName = "Right Alt")]
-            public KeyControl rightAlt { get; private set; }
+            [Preserve, InputControl(name = "rightalt", layout = "Button", displayName = "Right Alt")]
+            public ButtonControl rightAlt { get; private set; }
 
             protected override void FinishSetup()
             {
                 base.FinishSetup();
-                keyA = GetChildControl<KeyControl>("keya");
-                keyB = GetChildControl<KeyControl>("keyb");
-                keyC = GetChildControl<KeyControl>("keyc");
-                keyD = GetChildControl<KeyControl>("keyd");
-                keyE = GetChildControl<KeyControl>("keye");
-                keyF = GetChildControl<KeyControl>("keyf");
-                keyG = GetChildControl<KeyControl>("keyg");
-                keyH = GetChildControl<KeyControl>("keyh");
-                keyI = GetChildControl<KeyControl>("keyi");
-                keyJ = GetChildControl<KeyControl>("keyj");
-                keyK = GetChildControl<KeyControl>("keyk");
-                keyL = GetChildControl<KeyControl>("keyl");
-                keyM = GetChildControl<KeyControl>("keym");
-                keyN = GetChildControl<KeyControl>("keyn");
-                keyO = GetChildControl<KeyControl>("keyo");
-                keyP = GetChildControl<KeyControl>("keyp");
-                keyQ = GetChildControl<KeyControl>("keyq");
-                keyR = GetChildControl<KeyControl>("keyr");
-                keyS = GetChildControl<KeyControl>("keys");
-                keyT = GetChildControl<KeyControl>("keyt");
-                keyU = GetChildControl<KeyControl>("keyu");
-                keyV = GetChildControl<KeyControl>("keyv");
-                keyW = GetChildControl<KeyControl>("keyw");
-                keyX = GetChildControl<KeyControl>("keyx");
-                keyY = GetChildControl<KeyControl>("keyy");
-                keyZ = GetChildControl<KeyControl>("keyz");
-                numZero = GetChildControl<KeyControl>("numzero");
-                numOne = GetChildControl<KeyControl>("numone");
-                numTwo = GetChildControl<KeyControl>("numtwo");
-                numThree = GetChildControl<KeyControl>("numthree");
-                numFour = GetChildControl<KeyControl>("numfour");
-                numFive = GetChildControl<KeyControl>("numfive");
-                numSix = GetChildControl<KeyControl>("numsix");
-                numSeven = GetChildControl<KeyControl>("numseven");
-                numEight = GetChildControl<KeyControl>("numeight");
-                numNine = GetChildControl<KeyControl>("numnine");
-                fOne = GetChildControl<KeyControl>("fone");
-                fTwo = GetChildControl<KeyControl>("ftwo");
-                fThree = GetChildControl<KeyControl>("fthree");
-                fFour = GetChildControl<KeyControl>("ffour");
-                fFive = GetChildControl<KeyControl>("ffive");
-                fSix = GetChildControl<KeyControl>("fsix");
-                fSeven = GetChildControl<KeyControl>("fseven");
-                fEight = GetChildControl<KeyControl>("feight");
-                fNine = GetChildControl<KeyControl>("fnine");
-                fTen = GetChildControl<KeyControl>("ften");
-                fEleven = GetChildControl<KeyControl>("feleven");
-                fTwelve = GetChildControl<KeyControl>("ftwelve");
-                space = GetChildControl<KeyControl>("space");
-                enter = GetChildControl<KeyControl>("enter");
-                escape = GetChildControl<KeyControl>("escape");
-                tab = GetChildControl<KeyControl>("tab");
-                backspace = GetChildControl<KeyControl>("backspace");
-                delete = GetChildControl<KeyControl>("delete");
-                insert = GetChildControl<KeyControl>("insert");
-                home = GetChildControl<KeyControl>("home");
-                end = GetChildControl<KeyControl>("end");
-                pageUp = GetChildControl<KeyControl>("pageup");
-                pageDown = GetChildControl<KeyControl>("pagedown");
-                leftArrow = GetChildControl<KeyControl>("leftarrow");
-                rightArrow = GetChildControl<KeyControl>("rightarrow");
-                upArrow = GetChildControl<KeyControl>("uparrow");
-                downArrow = GetChildControl<KeyControl>("downarrow");
-                leftShift = GetChildControl<KeyControl>("leftshift");
-                rightShift = GetChildControl<KeyControl>("rightshift");
-                leftCtrl = GetChildControl<KeyControl>("leftctrl");
-                rightCtrl = GetChildControl<KeyControl>("rightctrl");
-                leftAlt = GetChildControl<KeyControl>("leftalt");
-                rightAlt = GetChildControl<KeyControl>("rightalt");
+                Debug.Log("[ShiyanRawInput] RawKeyboard FinishSetup (device created)");
+                keyA = GetChildControl<ButtonControl>("keya");
+                keyB = GetChildControl<ButtonControl>("keyb");
+                keyC = GetChildControl<ButtonControl>("keyc");
+                keyD = GetChildControl<ButtonControl>("keyd");
+                keyE = GetChildControl<ButtonControl>("keye");
+                keyF = GetChildControl<ButtonControl>("keyf");
+                keyG = GetChildControl<ButtonControl>("keyg");
+                keyH = GetChildControl<ButtonControl>("keyh");
+                keyI = GetChildControl<ButtonControl>("keyi");
+                keyJ = GetChildControl<ButtonControl>("keyj");
+                keyK = GetChildControl<ButtonControl>("keyk");
+                keyL = GetChildControl<ButtonControl>("keyl");
+                keyM = GetChildControl<ButtonControl>("keym");
+                keyN = GetChildControl<ButtonControl>("keyn");
+                keyO = GetChildControl<ButtonControl>("keyo");
+                keyP = GetChildControl<ButtonControl>("keyp");
+                keyQ = GetChildControl<ButtonControl>("keyq");
+                keyR = GetChildControl<ButtonControl>("keyr");
+                keyS = GetChildControl<ButtonControl>("keys");
+                keyT = GetChildControl<ButtonControl>("keyt");
+                keyU = GetChildControl<ButtonControl>("keyu");
+                keyV = GetChildControl<ButtonControl>("keyv");
+                keyW = GetChildControl<ButtonControl>("keyw");
+                keyX = GetChildControl<ButtonControl>("keyx");
+                keyY = GetChildControl<ButtonControl>("keyy");
+                keyZ = GetChildControl<ButtonControl>("keyz");
+                numZero = GetChildControl<ButtonControl>("numzero");
+                numOne = GetChildControl<ButtonControl>("numone");
+                numTwo = GetChildControl<ButtonControl>("numtwo");
+                numThree = GetChildControl<ButtonControl>("numthree");
+                numFour = GetChildControl<ButtonControl>("numfour");
+                numFive = GetChildControl<ButtonControl>("numfive");
+                numSix = GetChildControl<ButtonControl>("numsix");
+                numSeven = GetChildControl<ButtonControl>("numseven");
+                numEight = GetChildControl<ButtonControl>("numeight");
+                numNine = GetChildControl<ButtonControl>("numnine");
+                fOne = GetChildControl<ButtonControl>("fone");
+                fTwo = GetChildControl<ButtonControl>("ftwo");
+                fThree = GetChildControl<ButtonControl>("fthree");
+                fFour = GetChildControl<ButtonControl>("ffour");
+                fFive = GetChildControl<ButtonControl>("ffive");
+                fSix = GetChildControl<ButtonControl>("fsix");
+                fSeven = GetChildControl<ButtonControl>("fseven");
+                fEight = GetChildControl<ButtonControl>("feight");
+                fNine = GetChildControl<ButtonControl>("fnine");
+                fTen = GetChildControl<ButtonControl>("ften");
+                fEleven = GetChildControl<ButtonControl>("feleven");
+                fTwelve = GetChildControl<ButtonControl>("ftwelve");
+                space = GetChildControl<ButtonControl>("space");
+                enter = GetChildControl<ButtonControl>("enter");
+                escape = GetChildControl<ButtonControl>("escape");
+                tab = GetChildControl<ButtonControl>("tab");
+                backspace = GetChildControl<ButtonControl>("backspace");
+                delete = GetChildControl<ButtonControl>("delete");
+                insert = GetChildControl<ButtonControl>("insert");
+                home = GetChildControl<ButtonControl>("home");
+                end = GetChildControl<ButtonControl>("end");
+                pageUp = GetChildControl<ButtonControl>("pageup");
+                pageDown = GetChildControl<ButtonControl>("pagedown");
+                leftArrow = GetChildControl<ButtonControl>("leftarrow");
+                rightArrow = GetChildControl<ButtonControl>("rightarrow");
+                upArrow = GetChildControl<ButtonControl>("uparrow");
+                downArrow = GetChildControl<ButtonControl>("downarrow");
+                leftShift = GetChildControl<ButtonControl>("leftshift");
+                rightShift = GetChildControl<ButtonControl>("rightshift");
+                leftCtrl = GetChildControl<ButtonControl>("leftctrl");
+                rightCtrl = GetChildControl<ButtonControl>("rightctrl");
+                leftAlt = GetChildControl<ButtonControl>("leftalt");
+                rightAlt = GetChildControl<ButtonControl>("rightalt");
             }
         }
 
@@ -328,6 +330,7 @@ namespace Shiyan.OpenXR.RawInput
 
         protected override void RegisterDeviceLayout()
         {
+            Debug.Log("[ShiyanRawInput] RawKeyboard RegisterDeviceLayout");
             InputSystem.RegisterLayout(typeof(RawKeyboard),
                 matches: new InputDeviceMatcher()
                     .WithInterface(XRUtilities.InterfaceMatchAnyVersion)
@@ -341,6 +344,7 @@ namespace Shiyan.OpenXR.RawInput
 
         protected override void RegisterActionMapsWithRuntime()
         {
+            Debug.Log("[ShiyanRawInput] RawKeyboard RegisterActionMapsWithRuntime");
             AddActionMap(new ActionMapConfig
             {
                 name = "shiyanrawkeyboard",
@@ -352,7 +356,7 @@ namespace Shiyan.OpenXR.RawInput
                 {
                     new DeviceConfig
                     {
-                        characteristics = InputDeviceCharacteristics.None,
+                        characteristics = InputDeviceCharacteristics.TrackedDevice,
                         userPath = "/user/keyboard"
                     }
                 },

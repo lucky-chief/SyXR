@@ -391,7 +391,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 466023e5535785e4e9a187b966455172, type: 3}
   m_Name: RawMouseProfile Standalone
   m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawMouseProfile
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Shiyan Raw Mouse
   version: 0.1.0
   featureIdInternal: com.shiyan.openxr.rawmouse
@@ -1238,7 +1238,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f95fecfbfe13824c949b47f2e3ee33c, type: 3}
   m_Name: RawKeyboardProfile Standalone
   m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawKeyboardProfile
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Shiyan Raw Keyboard
   version: 0.1.0
   featureIdInternal: com.shiyan.openxr.rawkeyboard
@@ -1260,7 +1260,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 056125dd64c0ed540b40a4af74f7b495, type: 3}
   m_Name: RuntimeDebuggerOpenXRFeature Standalone
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Runtime Debugger
   version: 1
   featureIdInternal: com.unity.openxr.features.runtimedebugger
