@@ -26,7 +26,7 @@ namespace com.unity.shiyantech.xr
     /// <seealso cref="TouchscreenGestureInputController"/>
     [AddComponentMenu("XR/XR Screen Space Controller", 11)]
     [DefaultExecutionOrder(XRInteractionUpdateOrder.k_ScreenSpaceRayPoseDriver)]
-    public partial class XRScreenSpaceController : MonoBehaviour, IXRInputButtonReader
+    public partial class XRScreenSpaceController : MonoBehaviour, IXRInputButtonReader, IXRInputValueReader<Vector2>
     {
         [Header("Touchscreen Gesture Actions")]
         [SerializeField]
@@ -184,6 +184,20 @@ namespace com.unity.shiyantech.xr
         }
 
         [SerializeField]
+        [Tooltip("The action to use for the mouse scroll wheel. (Vector 2 Control).")]
+        InputActionProperty m_MouseScrollAction = new InputActionProperty(CreateMouseScrollAction());
+        /// <summary>
+        /// The Input System action used to read the mouse scroll wheel for this GameObject. Must be a <see cref="Vector2Control"/> Control.
+        /// The default action is bound to both <c>&lt;Mouse&gt;/scroll</c> and <c>&lt;RawMouse&gt;/wheel</c>;
+        /// a reference to an action in an Input Action Asset can be assigned instead.
+        /// </summary>
+        public InputActionProperty mouseScrollAction
+        {
+            get => m_MouseScrollAction;
+            set => SetInputActionProperty(ref m_MouseScrollAction, value);
+        }
+
+        [SerializeField]
         [Tooltip("The ray helper associated with the screen, and through which screen presses/touches will be interpreted.")]
         ScreenPointToRayHelper m_ScreenPointToRayHelper;
 
@@ -198,6 +212,23 @@ namespace com.unity.shiyantech.xr
         {
             get => m_BlockInteractionsWithScreenSpaceUI;
             set => m_BlockInteractionsWithScreenSpaceUI = value;
+        }
+
+        [SerializeField]
+        [Tooltip("触摸拖拽阈值（毫米）。手指按下时的轻微抖动不应被判定为拖拽，" +
+                 "否则列表里的按钮只会触发滚动、点不动。按屏幕物理尺寸换算成像素，仅在移动平台生效。")]
+        float m_TouchDragThresholdMillimeters = 6f;
+        /// <summary>
+        /// 触摸拖拽阈值（毫米），按屏幕物理尺寸换算后写入 <c>XRUIInputModule.trackedDeviceDragThresholdMultiplier</c>。
+        /// </summary>
+        public float touchDragThresholdMillimeters
+        {
+            get => m_TouchDragThresholdMillimeters;
+            set
+            {
+                m_TouchDragThresholdMillimeters = value;
+                ApplyTouchDragThreshold();
+            }
         }
 
         [SerializeField]
@@ -246,6 +277,12 @@ namespace com.unity.shiyantech.xr
         bool m_SelectPressed;
         bool m_SelectPressedThisFrame;
         bool m_SelectReleasedThisFrame;
+        Vector2 m_ScrollValue;
+        Vector2 m_LastTouchScreenPosition;
+        Vector2 m_MousePositionAtTouchRelease;
+        bool m_HasLastTouchScreenPosition;
+        bool m_HasRecordedReleaseMousePosition;
+        bool m_AppliedTouchDragThreshold;
 
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
@@ -267,7 +304,10 @@ namespace com.unity.shiyantech.xr
             {
                 ConfigureButtonReader(m_Interactor.selectInput);
                 ConfigureButtonReader(m_Interactor.uiPressInput);
+                ConfigureScrollReader(m_Interactor.uiScrollInput);
             }
+
+            ApplyTouchDragThreshold();
         }
 
         void OnEnable()
@@ -277,6 +317,7 @@ namespace com.unity.shiyantech.xr
             {
                 ConfigureButtonReader(m_Interactor.selectInput);
                 ConfigureButtonReader(m_Interactor.uiPressInput);
+                ConfigureScrollReader(m_Interactor.uiScrollInput);
             }
 
             EnableAllDirectActions();
@@ -299,17 +340,40 @@ namespace com.unity.shiyantech.xr
             reader.SetObjectReference(this);
         }
 
+        void ConfigureScrollReader(XRInputValueReader<Vector2> reader)
+        {
+            if (reader == null)
+                return;
+
+            reader.inputSourceMode = XRInputValueReader.InputSourceMode.ObjectReference;
+            reader.SetObjectReference(this);
+        }
+
         void Update()
         {
+            if (!m_AppliedTouchDragThreshold)
+                ApplyTouchDragThreshold();
+
             UpdateSelectState();
             UpdatePose();
+            UpdateScroll();
             UpdateScaleDelta();
+        }
+
+        void UpdateScroll()
+        {
+            var scrollAction = m_MouseScrollAction.action;
+            m_ScrollValue = scrollAction != null ? scrollAction.ReadValue<Vector2>() : Vector2.zero;
         }
 
         void UpdateSelectState()
         {
-            // 本设备 dongle 的“原地点击”不进 Input System，所以同时读 MouseButtonBridge。
-            bool pressed = MouseButtonBridge.IsLeftPressed() || MouseButtonBridge.ConsumeLeftClick();
+            bool pressed = false;
+
+            // 触摸屏：直接读 Unity Input System 的 primaryTouch，保证持续 select。
+            var touchscreen = Touchscreen.current;
+            if (touchscreen != null && touchscreen.primaryTouch.press.isPressed)
+                pressed = true;
 
             if (!IsPointerOverScreenSpaceCanvas())
             {
@@ -405,12 +469,62 @@ namespace com.unity.shiyantech.xr
             return true;
         }
 
+        Vector2 IXRInputValueReader<Vector2>.ReadValue() => m_ScrollValue;
+
+        bool IXRInputValueReader<Vector2>.TryReadValue(out Vector2 value)
+        {
+            value = m_ScrollValue;
+            return true;
+        }
+
         /// <summary>
-        /// 当前屏幕点（像素）：直接读鼠标位置（本设备用鼠标操作）。
+        /// 当前屏幕点（像素）：触摸屏优先用 primaryTouch，其次是鼠标位置。
         /// 按当前分辨率归一化后映射到 helper 的屏幕像素（Editor 的 Game 视图分辨率与设备屏幕不一定相同）。
         /// </summary>
         bool TryGetScreenPosition(out Vector2 screenPosition)
         {
+            // 触摸屏：按下时用触摸位置；抬手后继续保持在最后触摸位置，
+            // 直到鼠标（如果有）真的移动为止。
+            // 抬手那一帧如果立刻切回鼠标位置（Android 上通常是 (0,0)），
+            // 射线会从按钮上跳走，UIInputModule 在 Released 帧的
+            // pointerCurrentRaycast 不再指向按钮，GetEventHandler<IPointerClickHandler>
+            // 得到的对象和 pointerPress 不一致，click 就被取消了。
+            var touchscreen = Touchscreen.current;
+            if (touchscreen != null && Screen.width > 0 && Screen.height > 0)
+            {
+                var mouseActionForTouch = m_MousePositionAction.action;
+                Vector2 mousePosition = mouseActionForTouch != null ? mouseActionForTouch.ReadValue<Vector2>() : Vector2.zero;
+
+                if (touchscreen.primaryTouch.press.isPressed)
+                {
+                    m_LastTouchScreenPosition = touchscreen.primaryTouch.position.ReadValue();
+                    m_HasLastTouchScreenPosition = true;
+                    m_HasRecordedReleaseMousePosition = false;
+                }
+                else if (m_HasLastTouchScreenPosition)
+                {
+                    // 抬手后记录当时的鼠标位置，鼠标一动就把控制权还给鼠标，
+                    // 这样既不会抢鼠标的 hover，也不会让 click 丢掉抬手指的位置。
+                    if (!m_HasRecordedReleaseMousePosition)
+                    {
+                        m_MousePositionAtTouchRelease = mousePosition;
+                        m_HasRecordedReleaseMousePosition = true;
+                    }
+                    else if (mousePosition != m_MousePositionAtTouchRelease)
+                    {
+                        m_HasLastTouchScreenPosition = false;
+                    }
+                }
+
+                if (m_HasLastTouchScreenPosition)
+                {
+                    screenPosition = new Vector2(
+                        m_LastTouchScreenPosition.x / Screen.width * m_ScreenPointToRayHelper.screenWidth,
+                        m_LastTouchScreenPosition.y / Screen.height * m_ScreenPointToRayHelper.screenHeight);
+                    return true;
+                }
+            }
+
             var mouseAction = m_MousePositionAction.action;
             if (mouseAction != null && Screen.width > 0 && Screen.height > 0)
             {
@@ -447,6 +561,39 @@ namespace com.unity.shiyantech.xr
                 m_UIInputModule = eventSystem.currentInputModule as UIInputModule;
             }
             return m_UIInputModule != null;
+        }
+
+        /// <summary>
+        /// 触摸屏上手指轻微抖动就会超过 uGUI 默认的拖拽阈值（10px × 2，在本工程的屏幕像素密度下不到 2mm），
+        /// 于是“按下-抬起”被当成一次拖拽：ScrollRect 能滚，但列表里的按钮永远收不到 click。
+        /// 这里按屏幕物理尺寸把阈值换算成毫米，只放大 XR 追踪指针的拖拽阈值，
+        /// <see cref="EventSystem.pixelDragThreshold"/> 本身不动，鼠标 / 2D 触摸的行为保持不变。
+        /// </summary>
+        void ApplyTouchDragThreshold()
+        {
+            if (!Application.isMobilePlatform || m_ScreenPointToRayHelper == null)
+                return;
+
+            var eventSystem = EventSystem.current;
+            if (eventSystem == null || eventSystem.pixelDragThreshold <= 0)
+                return;
+
+            if (!FindUIInputModule() || m_UIInputModule == null)
+                return;
+
+            float screenWorldWidth = m_ScreenPointToRayHelper.screenSizeInWorldUnits.x;
+            if (screenWorldWidth <= 0f || Screen.width <= 0)
+                return;
+
+            // 本工程的屏幕像素空间就是相机看到的整块屏幕，宽度对应 Screen.width
+            float pixelsPerMeter = Screen.width / screenWorldWidth;
+            float thresholdInPixels = m_TouchDragThresholdMillimeters * 0.001f * pixelsPerMeter;
+            int baseThreshold = eventSystem.pixelDragThreshold;
+            if (thresholdInPixels <= baseThreshold)
+                return;
+
+            m_UIInputModule.trackedDeviceDragThresholdMultiplier = thresholdInPixels / baseThreshold;
+            m_AppliedTouchDragThreshold = true;
         }
 
         bool IsPointerOverScreenSpaceCanvas()
@@ -508,6 +655,7 @@ namespace com.unity.shiyantech.xr
             m_ScreenTouchCountAction.EnableDirectAction();
             m_MousePositionAction.EnableDirectAction();
             m_MouseSelectAction.EnableDirectAction();
+            m_MouseScrollAction.EnableDirectAction();
         }
 
         void DisableAllDirectActions()
@@ -523,6 +671,19 @@ namespace com.unity.shiyantech.xr
             m_ScreenTouchCountAction.DisableDirectAction();
             m_MousePositionAction.DisableDirectAction();
             m_MouseSelectAction.DisableDirectAction();
+            m_MouseScrollAction.DisableDirectAction();
+        }
+
+        /// <summary>
+        /// 默认滚轮 action：同时绑定普通鼠标和本设备 dongle 暴露的 RawMouse，
+        /// 避免在 Android 上只绑定 &lt;Mouse&gt;/scroll 时收不到滚轮。
+        /// </summary>
+        static InputAction CreateMouseScrollAction()
+        {
+            var action = new InputAction("Mouse Scroll", InputActionType.PassThrough, expectedControlType: "Vector2");
+            action.AddBinding("<Mouse>/scroll");
+            action.AddBinding("<RawMouse>/wheel");
+            return action;
         }
 
         void SetInputActionProperty(ref InputActionProperty property, InputActionProperty value)

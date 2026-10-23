@@ -142,7 +142,7 @@ public class ScreenPointToRayHelper : MonoBehaviour
     /// </summary>
     public Matrix4x4 CreatePerspectiveMatrix()
     {
-        var screenSize = ScreenSizeInWorldUnits;
+        var screenSize = screenSizeInWorldUnits;
         float eyeToScreenDistance = Mathf.Max(Mathf.Abs(zOffset), 1e-4f);
         float f = nearClip / eyeToScreenDistance;
         float left = -screenSize.x / 2f * f;
@@ -224,7 +224,7 @@ public class ScreenPointToRayHelper : MonoBehaviour
 
         viewMatrix = CreateViewMatrix(viewPosition, forward, up);
 
-        var screenSize = ScreenSizeInWorldUnits;
+        var screenSize = screenSizeInWorldUnits;
         float eyeToScreenDistance = Mathf.Max(Mathf.Abs(zOffset), 1e-4f);
         float scale = nearClip / eyeToScreenDistance;
         float halfWidth = screenSize.x * 0.5f;
@@ -263,7 +263,7 @@ public class ScreenPointToRayHelper : MonoBehaviour
     /// zOffset 用的是场景世界单位，投影边界也必须用同一世界尺度；
     /// 否则 XROrigin 被放大后，鼠标只映射到屏幕中央的一小块，交互会像失灵一样。
     /// </summary>
-    Vector2 ScreenSizeInWorldUnits
+    public Vector2 screenSizeInWorldUnits
     {
         get
         {
