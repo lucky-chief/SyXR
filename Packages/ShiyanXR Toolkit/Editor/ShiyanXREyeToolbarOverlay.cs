@@ -168,8 +168,8 @@ namespace com.shiyanxr.editor
                 s_OpenPanel = null;
         }
 
-        // 七行控件：距离 / 瞳距 / 显示相机 / 左右相机颜色 / 会聚面颜色与透明度
-        public override Vector2 GetWindowSize() => new Vector2(400f, 190f);
+        // 七行控件：距离 / 瞳距 / 显示相机 / 左右相机颜色 / 会聚面颜色与透明度；末尾再跟一块只读的尺寸信息
+        public override Vector2 GetWindowSize() => new Vector2(400f, 250f);
 
         public override void OnGUI(Rect rect)
         {
@@ -206,6 +206,8 @@ namespace com.shiyanxr.editor
             if (!Mathf.Approximately(alphaValue, alpha.floatValue))
                 alpha.floatValue = alphaValue;
 
+            DrawConvergencePlaneInfo();
+
             // 控件只改了 SerializedObject 的本地副本；这里先确认真的有修改，
             // 再用完整快照记录改动前的状态，最后一次性写回 state。
             // 这样 Ctrl+Z / Ctrl+Y 就能撤销 / 重做面板上的修改。
@@ -220,6 +222,29 @@ namespace com.shiyanxr.editor
                 SaveState();
                 RepaintAll();
             }
+        }
+
+        /// <summary>
+        /// 只读信息：XROrigin 缩放 k、0 视差面的有效世界尺寸，以及画面里物体相对真实尺寸的缩放 1/k。
+        /// 与 ShiyanXREyeStereoPreview 共用同一个定义，改 XROrigin 的 scale 后面板会跟着变。
+        /// </summary>
+        static void DrawConvergencePlaneInfo()
+        {
+            var camera = Camera.main;
+            if (camera == null)
+            {
+                EditorGUILayout.HelpBox("场景里没有 Main Camera，无法读取 XROrigin 缩放。", MessageType.None);
+                return;
+            }
+
+            float scale = ShiyanXREyeStereoPreview.XROriginScale(camera);
+            ShiyanXREyeStereoPreview.EffectiveConvergencePlaneSize(camera, out float width, out float height);
+
+            EditorGUILayout.HelpBox(
+                $"XROrigin Scale: {scale:0.###}\n" +
+                $"0-Parallax Plane: {width:0.####} × {height:0.####} m\n" +
+                $"Content appears: 1 / scale = {1f / scale:0.###}×",
+                MessageType.None);
         }
 
         static void DrawColor(SerializedProperty property, string label)

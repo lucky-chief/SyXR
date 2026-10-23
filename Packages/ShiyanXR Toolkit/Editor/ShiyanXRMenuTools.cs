@@ -9,7 +9,8 @@ namespace com.shiyanxr.editor
     /// <summary>
     /// Hierarchy 右键里的两个画布工具：把 world space canvas 摆到当前会聚面（零视差面）上。
     ///
-    /// 贴合规则：像素尺寸取项目设置里的单 view 像素宽高，物理尺寸取项目设置里的屏幕物理尺寸，
+    /// 贴合规则：像素尺寸取项目设置里的单 view 像素宽高，物理尺寸取“项目设置里的屏幕物理尺寸 ×
+    /// XROrigin 缩放”（与 ShiyanXREyeStereoPreview 画的 0 视差面同一套定义），
     /// 两者的差值全部由 canvas 的 scale 吸收；位置与朝向与会聚面完全一致。
     /// 朝向即 Main Camera 的朝向 —— 这也是会聚面的朝向，且画布正面正对相机，文字不会镜像。
     ///
@@ -136,7 +137,10 @@ namespace com.shiyanxr.editor
             return true;
         }
 
-        /// <summary>把 canvas 摆到会聚面上：像素尺寸 = 单 view 像素宽高，物理尺寸 = 屏幕物理尺寸（差值由 scale 吸收）。</summary>
+        /// <summary>
+        /// 把 canvas 摆到会聚面上：像素尺寸 = 单 view 像素宽高，
+        /// 物理尺寸 = 屏幕物理尺寸 × XROrigin 缩放（差值由 scale 吸收）。
+        /// </summary>
         static void ApplyFit(RectTransform rectTransform, Camera camera, ShiyanXRProjectSettings settings)
         {
             // 锚点与轴心都居中：sizeDelta 才是矩形的真实尺寸，矩形也正好以中心落在会聚面中心上
@@ -145,11 +149,14 @@ namespace com.shiyanxr.editor
             rectTransform.pivot = k_CenterAnchor;
             rectTransform.sizeDelta = new Vector2(settings.ViewPixelWidth, settings.ViewPixelHeight);
 
+            // 面的世界尺寸随 XROrigin 缩放一起变，画布要贴合预览里看到的面，否则 scale 一大就对不上
+            ShiyanXREyeStereoPreview.EffectiveConvergencePlaneSize(camera, out float physicalWidth, out float physicalHeight);
+
             // 像素尺寸保持不变，物理尺寸靠 scale 贴合；再除以父级缩放，否则父级有缩放时世界尺寸会跟着变
             Vector3 parentScale = rectTransform.parent != null ? rectTransform.parent.lossyScale : Vector3.one;
             rectTransform.localScale = new Vector3(
-                LocalScaleFor(settings.ScreenPhysicalWidth, settings.ViewPixelWidth, parentScale.x),
-                LocalScaleFor(settings.ScreenPhysicalHeight, settings.ViewPixelHeight, parentScale.y),
+                LocalScaleFor(physicalWidth, settings.ViewPixelWidth, parentScale.x),
+                LocalScaleFor(physicalHeight, settings.ViewPixelHeight, parentScale.y),
                 1f);
 
             rectTransform.position = ShiyanXREyeStereoPreview.ConvergencePlaneCenter(camera);
