@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using com.unity.shiyantech.xr;
+using Unity.XR.CoreUtils;
 using UnityEngine;
 
 public enum RayProjectionProvider
@@ -25,6 +26,8 @@ public enum RayProjectionProvider
 
 /// <summary>
 /// 不依赖 Camera 的屏幕坐标转换工具：屏幕像素 → 世界坐标。
+/// 屏幕的世界尺寸 = 项目设置里的屏幕物理尺寸 × 相机所在 XROrigin 的缩放，
+/// 与编辑器预览 ShiyanXREyeStereoPreview 共用同一套定义；zOffset 直接按场景世界单位使用。
 /// V / P 的来源由 <see cref="projectionProvider"/> 决定（编辑器取 <see cref="editorProjectionProvider"/>，构建里取 <see cref="runtimeProjectionProvider"/>）：
 /// Constant 用组件上的固定参数，LeftEye / RightEye 用相机的立体矩阵，
 /// CenterEye 由左右眼中点（眉心）与项目设置里的物理屏幕尺寸现算。
@@ -135,11 +138,11 @@ public class ScreenPointToRayHelper : MonoBehaviour
 
     /// <summary>
     /// 透视投影矩阵构建（Constant 模型：屏幕中心在 transform 处，眼距为 |zOffset|，
-    /// 屏幕物理尺寸取项目设置）
+    /// 屏幕尺寸取项目设置里的物理尺寸 × XROrigin 缩放）
     /// </summary>
     public Matrix4x4 CreatePerspectiveMatrix()
     {
-        var screenSize = ScreenSizeInMeters;
+        var screenSize = ScreenSizeInWorldUnits;
         float eyeToScreenDistance = Mathf.Max(Mathf.Abs(zOffset), 1e-4f);
         float f = nearClip / eyeToScreenDistance;
         float left = -screenSize.x / 2f * f;
@@ -221,7 +224,7 @@ public class ScreenPointToRayHelper : MonoBehaviour
 
         viewMatrix = CreateViewMatrix(viewPosition, forward, up);
 
-        var screenSize = ScreenSizeInMeters;
+        var screenSize = ScreenSizeInWorldUnits;
         float eyeToScreenDistance = Mathf.Max(Mathf.Abs(zOffset), 1e-4f);
         float scale = nearClip / eyeToScreenDistance;
         float halfWidth = screenSize.x * 0.5f;
@@ -236,12 +239,41 @@ public class ScreenPointToRayHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// 屏幕物理尺寸（米）：统一取自项目设置 Assets/Resources/ShiyanXR/ShiyanXRProjectSettings.asset，
-    /// 本组件不再单独配置。
+    /// 场景世界缩放 k：取参与投影的相机所在 XROrigin 的缩放（lossyScale.x）。
+    /// 0 视差面的世界尺寸 = 项目设置里的屏幕物理尺寸 × k，
+    /// 与编辑器预览 ShiyanXREyeStereoPreview.EffectiveConvergencePlaneSize 保持同一套定义。
+    /// 没有 XROrigin / 相机时按 1 处理。
     /// </summary>
-    static Vector2 ScreenSizeInMeters => new Vector2(
-        ShiyanXRProjectSettings.Instance.ScreenPhysicalWidth,
-        ShiyanXRProjectSettings.Instance.ScreenPhysicalHeight);
+    float WorldScale()
+    {
+        Camera eyeCamera = m_EyeCamera != null ? m_EyeCamera : Camera.main;
+        if (eyeCamera == null) return 1f;
+
+        var origin = eyeCamera.GetComponentInParent<XROrigin>();
+        if (origin == null) return 1f;
+
+        float scale = origin.transform.lossyScale.x;
+        if (float.IsNaN(scale) || float.IsInfinity(scale)) return 1f;
+
+        return Mathf.Max(Mathf.Abs(scale), 1e-4f);
+    }
+
+    /// <summary>
+    /// 屏幕在世界空间里的尺寸：项目设置里的物理尺寸 × XROrigin 缩放。
+    /// zOffset 用的是场景世界单位，投影边界也必须用同一世界尺度；
+    /// 否则 XROrigin 被放大后，鼠标只映射到屏幕中央的一小块，交互会像失灵一样。
+    /// </summary>
+    Vector2 ScreenSizeInWorldUnits
+    {
+        get
+        {
+            var settings = ShiyanXRProjectSettings.Instance;
+            float scale = WorldScale();
+            return new Vector2(
+                settings.ScreenPhysicalWidth * scale,
+                settings.ScreenPhysicalHeight * scale);
+        }
+    }
 
     /// <summary>取立体矩阵用的相机：优先用线上面指定的那台，否则退到 Camera.main。</summary>
     Camera ResolveEyeCamera()
