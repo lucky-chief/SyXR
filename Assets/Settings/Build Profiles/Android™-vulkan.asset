@@ -168,11 +168,7 @@ MonoBehaviour:
     - line: '|   visionOSBundleVersion: 1.0'
     - line: '|   tvOSBundleVersion: 1.0'
     - line: '|   bundleVersion: 0.1.0'
-    - line: '|   preloadedAssets:'
-    - line: '|   - {fileID: -6675618437845248602, guid: 383ba16b2669cef418c2ca2f981fb379,
-        type: 2}'
-    - line: '|   - {fileID: -7232023608195695493, guid: 63d352db749e23e4d8e8123beb422ff5,
-        type: 2}'
+    - line: '|   preloadedAssets: []'
     - line: '|   metroInputSource: 0'
     - line: '|   wsaTransparentSwapchain: 0'
     - line: '|   xboxOneDisableKinectGpuReservation: 1'
@@ -1021,7 +1017,7 @@ MonoBehaviour:
         m_ExportAsGoogleAndroidProject: 0
         m_DebugSymbolLevel: 1
         m_DebugSymbolFormat: 5
-        m_CurrentDeploymentTargetId: __builtin__target_default
+        m_CurrentDeploymentTargetId: 477346a767e5d10c
         m_BuildType: 2
         m_LinkTimeOptimization: 0
         m_BuildAppBundle: 0

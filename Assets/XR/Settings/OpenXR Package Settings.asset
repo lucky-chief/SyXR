@@ -1025,7 +1025,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 466023e5535785e4e9a187b966455172, type: 3}
   m_Name: RawMouseProfile Android
   m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawMouseProfile
-  m_enabled: 1
+  m_enabled: 0
   nameUi: Shiyan Raw Mouse
   version: 0.1.0
   featureIdInternal: com.shiyan.openxr.rawmouse

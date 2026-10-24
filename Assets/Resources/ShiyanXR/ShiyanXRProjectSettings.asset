@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: com.unity.shiyantech.xr::com.unity.shiyantech.xr.ShiyanXRProjectSettings
   m_ViewPixelWidth: 2560
   m_ViewPixelHeight: 1600
-  m_ScreenPhysicalWidth: 0.6974
-  m_ScreenPhysicalHeight: 0.3923
+  m_ScreenPhysicalWidth: 0.274
+  m_ScreenPhysicalHeight: 0.171
