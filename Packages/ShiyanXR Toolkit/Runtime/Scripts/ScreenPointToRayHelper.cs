@@ -25,7 +25,9 @@ public enum RayProjectionProvider
 }
 
 /// <summary>
-/// 不依赖 Camera 的屏幕坐标转换工具：屏幕像素 → 世界坐标。
+/// 不依赖 Camera 的屏幕坐标转换工具：窗口归一化坐标 (0..1) → 世界坐标。
+/// 归一化坐标与窗口分辨率无关，鼠标 / 触摸位置除以 <see cref="Screen.width"/>、<see cref="Screen.height"/> 即可；
+/// 另保留 <see cref="ScreenToWorldPoint"/> 作为“单 view 像素空间”的兼容入口。
 /// 屏幕的世界尺寸 = 项目设置里的屏幕物理尺寸 × 相机所在 XROrigin 的缩放，
 /// 与编辑器预览 ShiyanXREyeStereoPreview 共用同一套定义；zOffset 直接按场景世界单位使用。
 /// V / P 的来源由 <see cref="projectionProvider"/> 决定（编辑器取 <see cref="editorProjectionProvider"/>，构建里取 <see cref="runtimeProjectionProvider"/>）：
@@ -45,6 +47,15 @@ public class ScreenPointToRayHelper : MonoBehaviour
     [SerializeField]
     Camera m_EyeCamera;
 
+    [Header("指针窗口（runtime 自建窗口 / SBS）")]
+    [Tooltip("指针（鼠标 / 触摸）坐标所在窗口的像素宽高；为 0 时用 Screen.width / Screen.height。\n" +
+             "OpenXR runtime 自己开窗口显示画面时（例如 1280×720 的 SBS 窗口），指针坐标是那个窗口的像素，\n" +
+             "而 Unity 的渲染分辨率可能更大；两者不一致时必须在这里填窗口的实际大小。")]
+    public Vector2 pointerWindowSize = Vector2.zero;
+
+    [Tooltip("指针窗口横向并排了几个视图：0 = 自动（按 Screen.width / 窗口宽度推算），1 = 整个窗口就是一个视图，2 = SBS 立体窗口。")]
+    public int pointerViewCount;
+
     /// <summary>
     /// 当前环境生效的投影来源：编辑器下（含 Play 模式）用 <see cref="editorProjectionProvider"/>，
     /// 构建运行时用 <see cref="runtimeProjectionProvider"/>。
@@ -61,7 +72,7 @@ public class ScreenPointToRayHelper : MonoBehaviour
         }
     }
 
-    /// <summary>屏幕像素空间：取自项目设置里的“单 view 像素宽高”，像素 → NDC 与鼠标映射都用它。</summary>
+    /// <summary>单 view 像素空间宽高（取自项目设置），只给 <see cref="ScreenToWorldPoint"/> 这个像素入口做换算用。</summary>
     public int screenWidth => ShiyanXRProjectSettings.Instance.ViewPixelWidth;
     public int screenHeight => ShiyanXRProjectSettings.Instance.ViewPixelHeight;
     public float zOffset = 1f;
@@ -113,18 +124,20 @@ public class ScreenPointToRayHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// 屏幕坐标转世界坐标点
+    /// 窗口归一化坐标 (0..1) 转世界坐标点。
+    /// 归一化坐标和窗口分辨率无关，鼠标 / 触摸位置除以 <see cref="Screen.width"/>、<see cref="Screen.height"/>
+    /// 就能直接用；(0,0) 是窗口左下角，(1,1) 是右上角。
     /// </summary>
-    /// <param name="screenPoint">屏幕坐标（像素）</param>
+    /// <param name="viewportPoint">窗口归一化坐标 (0..1)</param>
     /// <param name="distance">从眼睛位置出发的距离</param>
     /// <returns>世界坐标点</returns>
-    public Vector3 ScreenToWorldPoint(Vector3 screenPoint, float distance)
+    public Vector3 ViewportToWorldPoint(Vector2 viewportPoint, float distance)
     {
         RefreshMatrices();
 
-        // 屏幕坐标 → 标准化设备坐标 (NDC)，范围 [-1, 1]，-1 为近平面
-        float ndcX = (screenPoint.x / screenWidth) * 2f - 1f;
-        float ndcY = (screenPoint.y / screenHeight) * 2f - 1f;
+        // 归一化坐标 → 标准化设备坐标 (NDC)，范围 [-1, 1]，-1 为近平面
+        float ndcX = viewportPoint.x * 2f - 1f;
+        float ndcY = viewportPoint.y * 2f - 1f;
         Vector4 ndcPoint = new Vector4(ndcX, ndcY, -1f, 1f);
 
         // 逆投影矩阵回到观察空间（含透视除法），再经逆视图矩阵回到世界空间
@@ -134,6 +147,87 @@ public class ScreenPointToRayHelper : MonoBehaviour
 
         Vector3 direction = (worldPoint - new Vector4(viewPosition.x, viewPosition.y, viewPosition.z, 1f)).normalized;
         return viewPosition + direction * distance;
+    }
+
+    /// <summary>
+    /// 屏幕像素 → 归一化坐标用的窗口尺寸：优先用 <see cref="pointerWindowSize"/>，
+    /// 没填（0）时退回 Unity 自己的 <see cref="Screen.width"/> / <see cref="Screen.height"/>。
+    /// </summary>
+    public Vector2 pointerWindowPixelSize
+    {
+        get
+        {
+            if (pointerWindowSize.x > 0f && pointerWindowSize.y > 0f)
+                return pointerWindowSize;
+
+            return new Vector2(Screen.width, Screen.height);
+        }
+    }
+
+    /// <summary>
+    /// 指针窗口横向并排的视图数：<see cref="pointerViewCount"/> 填了就用填的，
+    /// 填 0（自动）时按 “Unity 渲染宽度 / 指针窗口宽度” 推算，普通窗口算出来就是 1，SBS 算出来是 2。
+    /// </summary>
+    public int pointerViewCountResolved
+    {
+        get
+        {
+            if (pointerViewCount > 0)
+                return pointerViewCount;
+
+            Vector2 windowSize = pointerWindowPixelSize;
+            if (windowSize.x <= 0f || Screen.width <= 0)
+                return 1;
+
+            return Mathf.Max(1, Mathf.RoundToInt(Screen.width / windowSize.x));
+        }
+    }
+
+    /// <summary>
+    /// 指针像素坐标（runtime 窗口像素空间）→ 单个视图的窗口归一化坐标 (0..1)。
+    /// 结果与窗口分辨率、SBS 并排布局都无关，(0,0) 是视图左下角，(1,1) 是右上角。
+    /// </summary>
+    /// <remarks>
+    /// runtime 自建的 SBS 窗口里，左右两半分别是左右眼的完整画面。
+    /// 指针落在哪一半，就按那一半归一化，这样半边窗口也能操作整块屏幕；
+    /// 不这样做的话指针只能覆盖屏幕的一半（射线最多摆到中间）。
+    /// </remarks>
+    public Vector2 PointerToViewport(Vector2 pointerPosition)
+    {
+        Vector2 windowSize = pointerWindowPixelSize;
+        if (windowSize.x <= 0f || windowSize.y <= 0f)
+            return default;
+
+        float u = pointerPosition.x / windowSize.x;
+        float v = pointerPosition.y / windowSize.y;
+
+        int viewCount = Mathf.Max(pointerViewCountResolved, 1);
+        if (viewCount > 1)
+        {
+            // 落在第几个视图里，就在那个视图内归一化。
+            // 上界收一点，避免正好在右边界时被绕回 0。
+            float scaled = Mathf.Clamp(u, 0f, 0.99999f) * viewCount;
+            u = scaled - Mathf.Floor(scaled);
+        }
+
+        return new Vector2(Mathf.Clamp01(u), Mathf.Clamp01(v));
+    }
+
+    /// <summary>
+    /// 像素坐标（项目设置里的“单 view 像素空间”，即 <see cref="screenWidth"/> × <see cref="screenHeight"/>）转世界坐标点。
+    /// </summary>
+    /// <remarks>
+    /// 像素空间和实际窗口分辨率不一定一致，换分辨率后调用方得自己换算；
+    /// 新代码请优先用与分辨率无关的 <see cref="ViewportToWorldPoint"/>。
+    /// </remarks>
+    /// <param name="screenPoint">屏幕坐标（像素）</param>
+    /// <param name="distance">从眼睛位置出发的距离</param>
+    /// <returns>世界坐标点</returns>
+    public Vector3 ScreenToWorldPoint(Vector3 screenPoint, float distance)
+    {
+        return ViewportToWorldPoint(
+            new Vector2(screenPoint.x / screenWidth, screenPoint.y / screenHeight),
+            distance);
     }
 
     /// <summary>

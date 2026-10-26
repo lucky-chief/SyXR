@@ -417,19 +417,17 @@ namespace com.unity.shiyantech.xr
                 m_HasCheckedDisabledTrackingInputReferenceActions = true;
             }
 
-            if (!TryGetScreenPosition(out var screenPos))
+            if (!TryGetViewportPosition(out var viewportPosition))
                 return;
 
-            // 屏幕像素 → 世界坐标。这里要的只是方向，传多远的距离都不影响结果
-            // （ScreenToWorldPoint 出来的点会被归一化成方向），所以直接借用交互器的射线长度，
+            // 窗口归一化坐标 → 世界坐标。这里要的只是方向，传多远的距离都不影响结果
+            // （ViewportToWorldPoint 出来的点会被归一化成方向），所以直接借用交互器的射线长度，
             // 让下面那条调试绿线和射线实际能打到多远保持一致
             float rayLength = m_Interactor != null ? m_Interactor.maxRaycastDistance : Mathf.Abs(m_ScreenPointToRayHelper.zOffset);
-            var screenWorldPoint = m_ScreenPointToRayHelper.ScreenToWorldPoint(
-                new Vector3(screenPos.x, screenPos.y, 0f),
-                rayLength);
+            var screenWorldPoint = m_ScreenPointToRayHelper.ViewportToWorldPoint(viewportPosition, rayLength);
 
             // 射线起点用 helper 当帧的视点：Constant 是 transform.position + forward * zOffset，
-            // 左右眼 / 眉心则是对应眼位（ScreenToWorldPoint 内的 RefreshMatrices 已经算好）
+            // 左右眼 / 眉心则是对应眼位（ViewportToWorldPoint 内的 RefreshMatrices 已经算好）
             var viewPosition = m_ScreenPointToRayHelper.viewPosition;
             var ray = new Ray(viewPosition, (screenWorldPoint - viewPosition).normalized);
 
@@ -478,10 +476,12 @@ namespace com.unity.shiyantech.xr
         }
 
         /// <summary>
-        /// 当前屏幕点（像素）：触摸屏优先用 primaryTouch，其次是鼠标位置。
-        /// 按当前分辨率归一化后映射到 helper 的屏幕像素（Editor 的 Game 视图分辨率与设备屏幕不一定相同）。
+        /// 当前指针位置（单个视图的窗口归一化坐标 0..1）：触摸屏优先用 primaryTouch，其次是鼠标位置。
+        /// 换算交给 <see cref="ScreenPointToRayHelper.PointerToViewport"/>：
+        /// 它会用 <c>pointerWindowSize</c> 指定的窗口大小（而不是 Screen.width/height）归一化，
+        /// 并按 SBS 布局把指针折进它所在的那个视图，因此与窗口分辨率、并排布局都无关。
         /// </summary>
-        bool TryGetScreenPosition(out Vector2 screenPosition)
+        bool TryGetViewportPosition(out Vector2 viewportPosition)
         {
             // 触摸屏：按下时用触摸位置；抬手后继续保持在最后触摸位置，
             // 直到鼠标（如果有）真的移动为止。
@@ -518,9 +518,7 @@ namespace com.unity.shiyantech.xr
 
                 if (m_HasLastTouchScreenPosition)
                 {
-                    screenPosition = new Vector2(
-                        m_LastTouchScreenPosition.x / Screen.width * m_ScreenPointToRayHelper.screenWidth,
-                        m_LastTouchScreenPosition.y / Screen.height * m_ScreenPointToRayHelper.screenHeight);
+                    viewportPosition = m_ScreenPointToRayHelper.PointerToViewport(m_LastTouchScreenPosition);
                     return true;
                 }
             }
@@ -528,15 +526,11 @@ namespace com.unity.shiyantech.xr
             var mouseAction = m_MousePositionAction.action;
             if (mouseAction != null && Screen.width > 0 && Screen.height > 0)
             {
-                Vector2 mousePosition = mouseAction.ReadValue<Vector2>();
-                //Debug.Log($"mousePosition: {mousePosition}");
-                screenPosition = new Vector2(
-                    mousePosition.x / Screen.width * m_ScreenPointToRayHelper.screenWidth,
-                    mousePosition.y / Screen.height * m_ScreenPointToRayHelper.screenHeight);
+                viewportPosition = m_ScreenPointToRayHelper.PointerToViewport(mouseAction.ReadValue<Vector2>());
                 return true;
             }
 
-            screenPosition = default;
+            viewportPosition = default;
             return false;
         }
 

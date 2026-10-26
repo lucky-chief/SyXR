@@ -1176,6 +1176,26 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3234565341083907531, guid: 26fa606c3395002419305de6d5f78737,
         type: 3}
+      propertyPath: pointerViewCount
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3234565341083907531, guid: 26fa606c3395002419305de6d5f78737,
+        type: 3}
+      propertyPath: pointerWindowSize.x
+      value: 1280
+      objectReference: {fileID: 0}
+    - target: {fileID: 3234565341083907531, guid: 26fa606c3395002419305de6d5f78737,
+        type: 3}
+      propertyPath: pointerWindowSize.y
+      value: 720
+      objectReference: {fileID: 0}
+    - target: {fileID: 3234565341083907531, guid: 26fa606c3395002419305de6d5f78737,
+        type: 3}
+      propertyPath: editorProjectionProvider
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3234565341083907531, guid: 26fa606c3395002419305de6d5f78737,
+        type: 3}
       propertyPath: runtimeProjectionProvider
       value: 0
       objectReference: {fileID: 0}
