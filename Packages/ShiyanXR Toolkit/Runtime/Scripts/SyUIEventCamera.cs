@@ -123,7 +123,7 @@ public class SyUIEventCamera : MonoBehaviour
     ScreenPointToRayHelper ResolveRayHelper()
     {
         if (m_RayHelper == null)
-            m_RayHelper = FindObjectOfType<ScreenPointToRayHelper>();
+            m_RayHelper = FindAnyObjectByType<ScreenPointToRayHelper>();
 
         return m_RayHelper;
     }
