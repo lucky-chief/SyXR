@@ -3,40 +3,44 @@ using UnityEngine.EventSystems;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
 /// <summary>
-/// 给 uGUI / XRI 一台"像素空间可用"的事件相机，修掉真机上所有拖拽类组件的共性问题。
+/// 给 uGUI / XRI 一台"像素空间可用"的事件相机，修掉所有拖拽类组件的共性问题。
 ///
-/// 真机实测：画布 Event Camera（Main Camera）对 UI 命中点的 <c>WorldToScreenPoint</c> 返回 (0,0)
-/// （`pressRaycast.screenPosition` 也是 0，那是 TrackedDeviceGraphicRaycaster 用同一台相机算的），
+/// 本工程的相机走屏幕空间模型：Camera.main 的 Transform 停在屏幕平面上，
+/// 对 UI 命中点的 <c>WorldToScreenPoint</c> 会退化（返回 (0,0)，`pressRaycast.screenPosition` 也是 0），
 /// 于是 XRI 里 <c>eventData.position</c> 恒为 0 → `delta` 恒为 0 →
-/// `UIInputModule.ProcessPointerButtonDrag` 的 `if (!eventData.IsPointerMoving()) return;` 直接拦掉，
-/// 所有依赖 IDragHandler 的组件（Slider / ScrollRect / Scrollbar / InputField…）在真机上一起失效。
+/// <c>UIInputModule.ProcessPointerButtonDrag</c> 的 <c>if (!eventData.IsPointerMoving()) return;</c> 直接拦掉，
+/// 所有依赖 IDragHandler 的组件（Slider / ScrollRect / Scrollbar / InputField…）一起失效；
+/// 同时 <c>Graphic.Raycast(screenPos, eventCamera)</c> 用的是同一个屏幕点，
+/// 屏幕点退化后还会出现"部分 UI 能点、部分点不到"的现象。
 ///
 /// 工程里"屏幕像素空间"本来就有唯一定义：<see cref="ScreenPointToRayHelper"/> 的 view / projection 矩阵
 /// （控制器发射线就是用它）。这里建一台**只做坐标换算、不参与渲染**的相机，直接采用这两个矩阵，
 /// 再把它接到 Canvas.worldCamera 与 XRI 的 <c>UIInputModule.uiCamera</c> 上，
-/// 使 <c>eventData.position</c> 与 <c>pressEventCamera</c> 自洽 —— uGUI 自己的拖动逻辑随之恢复，
+/// 使 <c>eventData.position</c> 与 <c>pressEventCamera</c> 自洽 —— uGUI 自己的拖动 / 点击逻辑随之恢复，
 /// 不需要给每个组件写 handler。
 ///
 /// 挂在世界空间画布上即可（本工程是 0-World Canvas），无需连线：helper 与输入模块都是运行时自动找。
-/// 组件在 Editor 下不介入（改动只在真机生效），OnDisable 会还原原来的相机引用并销毁临时相机。
+/// 运行期（真机 / PC 构建 / Editor Play 模式）生效，非 Play 的编辑模式不介入，避免往场景里塞临时相机；
+/// OnDisable 会还原原来的相机引用并销毁临时相机。
 /// </summary>
 [RequireComponent(typeof(Canvas))]
 public class SyUIEventCamera : MonoBehaviour
 {
     [SerializeField] ScreenPointToRayHelper m_RayHelper;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
     Canvas m_Canvas;
     Camera m_EventCamera;
     UIInputModule m_UIInputModule;
 
     Camera m_PreviousCanvasCamera;
     Camera m_PreviousModuleCamera;
-#endif
 
     void OnEnable()
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
+        // 只在运行期介入：真机 / PC 构建 / Editor Play 模式表现一致
+        if (!Application.isPlaying)
+            return;
+
         m_Canvas = GetComponent<Canvas>();
         if (m_Canvas == null)
             return;
@@ -78,13 +82,11 @@ public class SyUIEventCamera : MonoBehaviour
             $" 原 uiCamera={(m_PreviousModuleCamera != null ? m_PreviousModuleCamera.name : "null")}," +
             $" 画布中心在原相机下的像素={(m_PreviousCanvasCamera != null ? m_PreviousCanvasCamera.WorldToScreenPoint(transform.position).ToString() : "-")}," +
             $" 在新相机下={(m_EventCamera != null ? m_EventCamera.WorldToScreenPoint(transform.position).ToString() : "-")}");
-#endif
     }
 
     /// <summary>helper 的 V / P 随 rig 与 provider 变化，每帧同步一次。</summary>
     void LateUpdate()
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
         if (m_EventCamera == null)
             return;
 
@@ -100,12 +102,10 @@ public class SyUIEventCamera : MonoBehaviour
             m_UIInputModule = module;
             Debug.Log($"[{nameof(SyUIEventCamera)}] 补挂完成：UIInputModule.uiCamera -> {m_EventCamera.name}");
         }
-#endif
     }
 
     void OnDisable()
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
         if (m_Canvas != null)
             m_Canvas.worldCamera = m_PreviousCanvasCamera;
 
@@ -117,7 +117,6 @@ public class SyUIEventCamera : MonoBehaviour
             Destroy(m_EventCamera.gameObject);
             m_EventCamera = null;
         }
-#endif
     }
 
     ScreenPointToRayHelper ResolveRayHelper()
@@ -135,11 +134,9 @@ public class SyUIEventCamera : MonoBehaviour
     /// </summary>
     void SyncMatrices(ScreenPointToRayHelper helper)
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
         helper.RefreshMatrices();
 
         m_EventCamera.worldToCameraMatrix = helper.currentViewMatrix;
         m_EventCamera.projectionMatrix = helper.currentProjectionMatrix;
-#endif
     }
 }
