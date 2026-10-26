@@ -832,7 +832,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07d9d68daa785c6419fd9089a7d9afa4, type: 3}
   m_Name: ShiyanDisplayRefreshRateFeature Android
   m_EditorClassIdentifier: com.unity.shiyantech.xr::com.unity.shiyantech.xr.ShiyanDisplayRefreshRateFeature
-  m_enabled: 1
+  m_enabled: 0
   nameUi: "\u89C6\u5EF6\u79D1\u6280XR\u5237\u65B0\u7387"
   version: 1.0.0
   featureIdInternal: com.shiyantech.openxr.feature.display_refresh_rate
@@ -1025,7 +1025,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 466023e5535785e4e9a187b966455172, type: 3}
   m_Name: RawMouseProfile Android
   m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RawMouseProfile
-  m_enabled: 1
+  m_enabled: 0
   nameUi: Shiyan Raw Mouse
   version: 0.1.0
   featureIdInternal: com.shiyan.openxr.rawmouse

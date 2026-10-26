@@ -13,6 +13,22 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 namespace com.unity.shiyantech.xr
 {
     /// <summary>
+    /// 屏幕射线用哪套投影。
+    /// </summary>
+    public enum ScreenRaySource
+    {
+        /// <summary>
+        /// 编辑器的非播放模式用 Main Camera（它会与 Game View 里实际渲染的画面一致），
+        /// 其余情况在没有 XR 设备时用 Main Camera、有 XR 设备时用 ScreenPointToRayHelper。
+        /// </summary>
+        Auto,
+        /// <summary>始终用 Main Camera 当前的 V/P（普通的 2D / 键鼠场景，或编辑器预览）。</summary>
+        RenderCamera,
+        /// <summary>始终用 ScreenPointToRayHelper 的屏幕模型（与 XR Runtime / 眉心 / 左右眼一致）。</summary>
+        RayHelper,
+    }
+
+    /// <summary>
     /// Interprets screen presses and gestures by using actions from the Input System and applying
     /// the resulting ray pose/select state directly to the XRRayInteractor on the same GameObject.
     /// This is the XRI 3.x replacement for the deprecated XRBaseController-based screen space controller.
@@ -22,6 +38,10 @@ namespace com.unity.shiyantech.xr
     /// setting in <b>Edit &gt; Project Settings &gt; Player</b> for input values to be read.
     /// Each input action must also be enabled to read the current value of the action. Referenced
     /// input actions in an Input Action Asset are not enabled by default.
+    ///
+    /// 键鼠模式：鼠标位置先归一化成视口坐标，再用“画面实际渲染时用的那套 V/P”生成射线，
+    /// 最后把交互器的世界位姿设成这条射线。<see cref="raySource"/> 决定用 Main Camera 还是
+    /// <see cref="ScreenPointToRayHelper"/>；两套投影必须和当前画面一致，射线才会正好落在鼠标下面。
     /// </remarks>
     /// <seealso cref="TouchscreenGestureInputController"/>
     [AddComponentMenu("XR/XR Screen Space Controller", 11)]
@@ -188,6 +208,18 @@ namespace com.unity.shiyantech.xr
         ScreenPointToRayHelper m_ScreenPointToRayHelper;
 
         [SerializeField]
+        [Tooltip("鼠标射线使用哪套投影。Auto：编辑器非播放模式用 Main Camera（与 Game View 实际渲染完全一致），播放 / 真机有 XR 设备时用 ScreenPointToRayHelper，没有 XR 设备时用 Main Camera。")]
+        ScreenRaySource m_RaySource = ScreenRaySource.Auto;
+        /// <summary>
+        /// 鼠标射线使用哪套投影。需要和当前画面上实际使用的投影一致，射线才会正好落在鼠标下面。
+        /// </summary>
+        public ScreenRaySource raySource
+        {
+            get => m_RaySource;
+            set => m_RaySource = value;
+        }
+
+        [SerializeField]
         [Tooltip("Tells the XR Screen Space Controller to ignore interactions when hitting a screen space canvas.")]
         bool m_BlockInteractionsWithScreenSpaceUI = true;
         /// <summary>
@@ -252,9 +284,10 @@ namespace com.unity.shiyantech.xr
         /// </summary>
         protected void Start()
         {
-            if (m_ScreenPointToRayHelper == null)
+            // 两套投影至少要有一样：编辑器 / 普通 PC 可以直接用 Main Camera，未必需要 helper
+            if (m_ScreenPointToRayHelper == null && Camera.main == null)
             {
-                Debug.LogWarning($"Could not find associated {nameof(ScreenPointToRayHelper)} in scene." +
+                Debug.LogWarning($"Could not find associated {nameof(ScreenPointToRayHelper)} or a Main Camera in scene. " +
                     $"This {nameof(XRScreenSpaceController)} will be disabled.", this);
                 enabled = false;
                 return;
@@ -319,6 +352,13 @@ namespace com.unity.shiyantech.xr
                 {
                     pressed = true;
                 }
+
+                // 与鼠标位置一样，Input Action 没启用时退回系统鼠标左键，保证键鼠调试能点
+                if (Mouse.current != null &&
+                    (Mouse.current.leftButton.isPressed || Mouse.current.leftButton.wasPressedThisFrame))
+                {
+                    pressed = true;
+                }
             }
             else
             {
@@ -353,30 +393,24 @@ namespace com.unity.shiyantech.xr
                 m_HasCheckedDisabledTrackingInputReferenceActions = true;
             }
 
-            if (!TryGetScreenPosition(out var screenPos))
+            if (!TryGetViewportPoint(out var viewportPoint))
                 return;
 
-            // 屏幕像素 → 世界坐标。这里要的只是方向，传多远的距离都不影响结果
-            // （ScreenToWorldPoint 出来的点会被归一化成方向），所以直接借用交互器的射线长度，
-            // 让下面那条调试绿线和射线实际能打到多远保持一致
-            float rayLength = m_Interactor != null ? m_Interactor.maxRaycastDistance : Mathf.Abs(m_ScreenPointToRayHelper.zOffset);
-            var screenWorldPoint = m_ScreenPointToRayHelper.ScreenToWorldPoint(
-                new Vector3(screenPos.x, screenPos.y, 0f),
-                rayLength);
+            // 关键：射线必须用“画面实际渲染时用的那套 V/P”。
+            // 编辑器非播放模式用 Main Camera（ShiyanXREyeStereoPreview 会改写它），
+            // 真机 / XR 用 helper 的屏幕模型；两者选错，射线就会和光标差一截。
+            if (!TryGetAimRay(viewportPoint, out var ray))
+                return;
 
-            // 射线起点用 helper 当帧的视点：Constant 是 transform.position + forward * zOffset，
-            // 左右眼 / 眉心则是对应眼位（ScreenToWorldPoint 内的 RefreshMatrices 已经算好）
-            var viewPosition = m_ScreenPointToRayHelper.viewPosition;
-            var ray = new Ray(viewPosition, (screenWorldPoint - viewPosition).normalized);
+            float rayLength = m_Interactor != null
+                ? m_Interactor.maxRaycastDistance
+                : (m_ScreenPointToRayHelper != null ? Mathf.Abs(m_ScreenPointToRayHelper.zOffset) : 1f);
 
             // 在 Scene 视图里画出这条射线，方便调试（Debug.DrawRay 只在 Editor / Development Build 生效）
             Debug.DrawRay(ray.origin, ray.direction * rayLength, Color.green);
 
-            if (transform.parent != null)
-                transform.localPosition = transform.parent.InverseTransformPoint(ray.origin);
-            else
-                transform.position = ray.origin;
-            transform.localRotation = Quaternion.LookRotation(ray.direction);
+            // 直接用世界位姿：父节点有旋转 / 缩放时，localRotation 不一定能让 forward 对准 ray.direction
+            transform.SetPositionAndRotation(ray.origin, Quaternion.LookRotation(ray.direction));
         }
 
         void UpdateScaleDelta()
@@ -406,23 +440,94 @@ namespace com.unity.shiyantech.xr
         }
 
         /// <summary>
-        /// 当前屏幕点（像素）：直接读鼠标位置（本设备用鼠标操作）。
-        /// 按当前分辨率归一化后映射到 helper 的屏幕像素（Editor 的 Game 视图分辨率与设备屏幕不一定相同）。
+        /// 鼠标位置 → 归一化视口坐标（0..1，左下原点）。
+        /// 归一化到视口，不再经过 helper 的固定像素尺寸：Game View / 设备屏幕分辨率、宽高比不同，
+        /// 归一化后仍然是画面里的同一点，鼠标和射线不会因为分辨率换算而错位。
         /// </summary>
-        bool TryGetScreenPosition(out Vector2 screenPosition)
+        bool TryGetViewportPoint(out Vector2 viewportPoint)
+        {
+            if (Screen.width <= 0 || Screen.height <= 0 || !TryReadMousePosition(out var mousePosition))
+            {
+                viewportPoint = default;
+                return false;
+            }
+
+            viewportPoint = new Vector2(mousePosition.x / Screen.width, mousePosition.y / Screen.height);
+            return true;
+        }
+
+        /// <summary>
+        /// 读系统鼠标位置：优先用面板上配置的 Mouse Position action；它没启用 / 没绑定时
+        /// 直接退回 <see cref="Mouse"/>，保证键鼠调试时总能拿到光标位置。
+        /// </summary>
+        bool TryReadMousePosition(out Vector2 mousePosition)
         {
             var mouseAction = m_MousePositionAction.action;
-            if (mouseAction != null && Screen.width > 0 && Screen.height > 0)
+            if (mouseAction != null && mouseAction.enabled)
             {
-                Vector2 mousePosition = mouseAction.ReadValue<Vector2>();
-                //Debug.Log($"mousePosition: {mousePosition}");
-                screenPosition = new Vector2(
-                    mousePosition.x / Screen.width * m_ScreenPointToRayHelper.screenWidth,
-                    mousePosition.y / Screen.height * m_ScreenPointToRayHelper.screenHeight);
+                mousePosition = mouseAction.ReadValue<Vector2>();
                 return true;
             }
 
-            screenPosition = default;
+            if (Mouse.current != null)
+            {
+                mousePosition = Mouse.current.position.ReadValue();
+                return true;
+            }
+
+            mousePosition = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Auto 的选法：编辑器的非播放模式必须用 Main Camera ——
+        /// ShiyanXREyeStereoPreview 会改写 Main Camera 的 V/P，只有它和 Game View 里看到的画面一致；
+        /// 真机 / XR Play 用 helper 的屏幕模型；没有 XR 设备时（普通 PC / 桌面）用 Main Camera 的普通透视投影。
+        /// </summary>
+        ScreenRaySource ResolveRaySource()
+        {
+            if (m_RaySource != ScreenRaySource.Auto)
+                return m_RaySource;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                return ScreenRaySource.RenderCamera;
+#endif
+
+            return UnityEngine.XR.XRSettings.isDeviceActive
+                ? ScreenRaySource.RayHelper
+                : ScreenRaySource.RenderCamera;
+        }
+
+        /// <summary>按当前选择的投影，把视口点变成世界射线；首选源不可用时自动退到另一套。</summary>
+        bool TryGetAimRay(Vector2 viewportPoint, out Ray ray)
+        {
+            var viewport = new Vector3(viewportPoint.x, viewportPoint.y, 0f);
+
+            if (ResolveRaySource() == ScreenRaySource.RenderCamera)
+            {
+                var camera = Camera.main;
+                if (camera != null)
+                {
+                    ray = camera.ViewportPointToRay(viewport);
+                    return true;
+                }
+            }
+
+            if (m_ScreenPointToRayHelper != null)
+            {
+                ray = m_ScreenPointToRayHelper.ViewportPointToRay(viewportPoint);
+                return true;
+            }
+
+            var fallbackCamera = Camera.main;
+            if (fallbackCamera != null)
+            {
+                ray = fallbackCamera.ViewportPointToRay(viewport);
+                return true;
+            }
+
+            ray = default;
             return false;
         }
 

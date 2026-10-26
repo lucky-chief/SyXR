@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac332400c66c274bf45b894963037cd7, type: 3}
   m_Name: ShiyanXRProjectSettings
   m_EditorClassIdentifier: com.unity.shiyantech.xr::com.unity.shiyantech.xr.ShiyanXRProjectSettings
-  m_ViewPixelWidth: 2560
-  m_ViewPixelHeight: 1600
-  m_ScreenPhysicalWidth: 0.6974
-  m_ScreenPhysicalHeight: 0.3923
+  m_ViewPixelWidth: 3840
+  m_ViewPixelHeight: 2160
+  m_ScreenPhysicalWidth: 0.698
+  m_ScreenPhysicalHeight: 0.393
