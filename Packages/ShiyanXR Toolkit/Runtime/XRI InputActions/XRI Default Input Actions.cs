@@ -2082,17 +2082,6 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
             ""bindings"": [
                 {
                     ""name"": """",
-                    ""id"": ""e87fa299-8441-4620-89dd-0564c7d552e2"",
-                    ""path"": ""<Mouse>/position"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Point"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
                     ""id"": ""445a013e-9c17-48a2-9856-067e4826df03"",
                     ""path"": ""<Pen>/position"",
                     ""interactions"": """",
@@ -2126,34 +2115,12 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                 },
                 {
                     ""name"": """",
-                    ""id"": ""57909bb4-1088-4975-9227-ecc87a305257"",
-                    ""path"": ""<Mouse>/leftButton"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Click"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
                     ""id"": ""2740386d-d4b6-4342-903c-d9390783f04a"",
                     ""path"": ""<Pen>/tip"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Click"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""d6fd3bb5-c747-4eba-b599-1c6d7c738e2a"",
-                    ""path"": ""<Mouse>/scroll"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""ScrollWheel"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -2171,7 +2138,7 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                 {
                     ""name"": """",
                     ""id"": ""fb2286cc-fa20-4564-bff6-9f790f12cf6b"",
-                    ""path"": ""<Mouse>/middleButton"",
+                    ""path"": ""<RawMouse>/middle"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -2182,7 +2149,7 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                 {
                     ""name"": """",
                     ""id"": ""54eb7da2-546a-4d75-bfcc-ae38be303a59"",
-                    ""path"": ""<Mouse>/rightButton"",
+                    ""path"": ""<RawMouse>/right"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
