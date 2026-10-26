@@ -22,6 +22,11 @@ public final class MouseButtonBridge
     private static final String TAG = "MouseButtonBridge";
     private static final int BUTTON_PRIMARY = 1; // MotionEvent.getButtonState() 中的主键位
     private static final int BUTTON_SECONDARY = 2; // MotionEvent.getButtonState() 中的次键位（鼠标右键）
+    /**
+     * Android 的 AXIS_VSCROLL / AXIS_HSCROLL 通常归一化到 ±1，
+     * 这里换算成和桌面鼠标滚轮一致的 ±120 tick，UI 的滚动速度才不会小到看不见。
+     */
+    private static final float SCROLL_TICKS_PER_AXIS = 120f;
     /** Unity 承载输入的那个视图（2022.3 上是 FrameLayout，见 attachToInputTargets 的说明） */
     private static final String UNITY_PLAYER_VIEW_CLASS = "com.unity3d.player.UnityPlayer";
 
@@ -29,6 +34,8 @@ public final class MouseButtonBridge
     private static volatile boolean sLeftPressed;
     private static volatile boolean sRightPressed;
     private static volatile boolean sClickLatched;
+    private static volatile float sScrollX;
+    private static volatile float sScrollY;
 
     private MouseButtonBridge() {}
 
@@ -50,6 +57,22 @@ public final class MouseButtonBridge
         boolean latched = sClickLatched;
         sClickLatched = false;
         return latched;
+    }
+
+    /** 自上次调用以来的滚轮 X 轴增量（读取后清零） */
+    public static float consumeScrollX()
+    {
+        float value = sScrollX;
+        sScrollX = 0f;
+        return value;
+    }
+
+    /** 自上次调用以来的滚轮 Y 轴增量（读取后清零） */
+    public static float consumeScrollY()
+    {
+        float value = sScrollY;
+        sScrollY = 0f;
+        return value;
     }
 
     /** 在主线程挂监听，重复调用安全；activity 由 C# 侧传入 */
@@ -146,6 +169,14 @@ public final class MouseButtonBridge
         final int buttonState = event.getButtonState();
         setLeftPressed((buttonState & BUTTON_PRIMARY) != 0);
         setRightPressed((buttonState & BUTTON_SECONDARY) != 0);
+
+        // 滚轮走 ACTION_SCROLL，本设备 dongle 的滚轮不一定进新版 Input System，
+        // 这里直接累加 Android 侧的轴值，供 C# 轮询兜底
+        if (event.getAction() == MotionEvent.ACTION_SCROLL)
+        {
+            sScrollX += event.getAxisValue(MotionEvent.AXIS_HSCROLL) * SCROLL_TICKS_PER_AXIS;
+            sScrollY += event.getAxisValue(MotionEvent.AXIS_VSCROLL) * SCROLL_TICKS_PER_AXIS;
+        }
     }
 
     private static void setLeftPressed(boolean pressed)

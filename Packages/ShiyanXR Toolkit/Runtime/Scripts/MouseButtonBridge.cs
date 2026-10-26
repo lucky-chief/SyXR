@@ -60,6 +60,17 @@ public static class MouseButtonBridge
     {
         return Bridge != null && Bridge.CallStatic<bool>("consumeLeftClick");
     }
+
+    /// <summary>自上次调用以来的滚轮增量（读取后清零）</summary>
+    public static Vector2 ConsumeScroll()
+    {
+        if (Bridge == null)
+            return Vector2.zero;
+
+        return new Vector2(
+            Bridge.CallStatic<float>("consumeScrollX"),
+            Bridge.CallStatic<float>("consumeScrollY"));
+    }
 #else
     /// <summary>左键当前是否按下（非 Android 平台恒为 false）</summary>
     public static bool IsLeftPressed() => false;
@@ -69,5 +80,8 @@ public static class MouseButtonBridge
 
     /// <summary>自上次调用以来是否按下过左键（非 Android 平台恒为 false）</summary>
     public static bool ConsumeLeftClick() => false;
+
+    /// <summary>自上次调用以来的滚轮增量（非 Android 平台恒为零）</summary>
+    public static Vector2 ConsumeScroll() => Vector2.zero;
 #endif
 }

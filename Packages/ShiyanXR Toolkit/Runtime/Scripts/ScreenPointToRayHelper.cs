@@ -25,11 +25,12 @@ public enum RayProjectionProvider
 }
 
 /// <summary>
-/// 不依赖 Camera 的屏幕坐标转换工具：屏幕像素 / 视口坐标 → 世界坐标 / 射线。
+/// 不依赖 Camera 的屏幕坐标转换工具：屏幕像素 → 世界坐标。
+/// 屏幕的世界尺寸 = 项目设置里的屏幕物理尺寸 × 相机所在 XROrigin 的缩放，
+/// 与编辑器预览 ShiyanXREyeStereoPreview 共用同一套定义；zOffset 直接按场景世界单位使用。
 /// V / P 的来源由 <see cref="projectionProvider"/> 决定（编辑器取 <see cref="editorProjectionProvider"/>，构建里取 <see cref="runtimeProjectionProvider"/>）：
 /// Constant 用组件上的固定参数，LeftEye / RightEye 用相机的立体矩阵，
 /// CenterEye 由左右眼中点（眉心）与项目设置里的物理屏幕尺寸现算。
-/// 屏幕尺寸默认再乘相机所在 XROrigin 的缩放，与编辑器 0 视差面的定义保持一致。
 /// </summary>
 public class ScreenPointToRayHelper : MonoBehaviour
 {
@@ -43,11 +44,6 @@ public class ScreenPointToRayHelper : MonoBehaviour
 	[Tooltip("提供左右眼立体矩阵的相机；留空时取 Camera.main。")]
     [SerializeField]
     Camera m_EyeCamera;
-
-    [Header("屏幕尺寸")]
-    [Tooltip("屏幕物理尺寸是否随该相机所在 XROrigin 的缩放同比放大。与编辑器里 0 视差面的定义一致；XROrigin 缩放为 1 时无影响。")]
-    [SerializeField]
-    bool m_ScaleScreenWithXROrigin = true;
 
     /// <summary>
     /// 当前环境生效的投影来源：编辑器下（含 Play 模式）用 <see cref="editorProjectionProvider"/>，
@@ -117,20 +113,18 @@ public class ScreenPointToRayHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// 归一化视口坐标（0..1，左下原点）→ 世界射线。
-    ///
-    /// 与 <see cref="ScreenToWorldPoint"/> 共用同一套 V/P，但直接接受视口坐标：
-    /// 鼠标射线只需要“视口里的哪一点”，不必先换算成某个固定的屏幕像素尺寸，
-    /// 因此 Game View 与设备屏幕分辨率 / 宽高比不同也不会把射线算歪。
-    /// 射线起点是当前 provider 的视点（Constant 的固定眼位，或左右眼 / 眉心的眼位）。
+    /// 屏幕坐标转世界坐标点
     /// </summary>
-    public Ray ViewportPointToRay(Vector2 viewportPoint)
+    /// <param name="screenPoint">屏幕坐标（像素）</param>
+    /// <param name="distance">从眼睛位置出发的距离</param>
+    /// <returns>世界坐标点</returns>
+    public Vector3 ScreenToWorldPoint(Vector3 screenPoint, float distance)
     {
         RefreshMatrices();
 
-        // 视口坐标 → 标准化设备坐标 (NDC)，范围 [-1, 1]，-1 为近平面
-        float ndcX = viewportPoint.x * 2f - 1f;
-        float ndcY = viewportPoint.y * 2f - 1f;
+        // 屏幕坐标 → 标准化设备坐标 (NDC)，范围 [-1, 1]，-1 为近平面
+        float ndcX = (screenPoint.x / screenWidth) * 2f - 1f;
+        float ndcY = (screenPoint.y / screenHeight) * 2f - 1f;
         Vector4 ndcPoint = new Vector4(ndcX, ndcY, -1f, 1f);
 
         // 逆投影矩阵回到观察空间（含透视除法），再经逆视图矩阵回到世界空间
@@ -139,31 +133,16 @@ public class ScreenPointToRayHelper : MonoBehaviour
         Vector4 worldPoint = viewMatrix.inverse * viewSpacePoint;
 
         Vector3 direction = (worldPoint - new Vector4(viewPosition.x, viewPosition.y, viewPosition.z, 1f)).normalized;
-        return new Ray(viewPosition, direction);
-    }
-
-    /// <summary>
-    /// 屏幕坐标转世界坐标点
-    /// </summary>
-    /// <param name="screenPoint">屏幕坐标（像素）</param>
-    /// <param name="distance">从眼睛位置出发的距离</param>
-    /// <returns>世界坐标点</returns>
-    public Vector3 ScreenToWorldPoint(Vector3 screenPoint, float distance)
-    {
-        float width = Mathf.Max(1, screenWidth);
-        float height = Mathf.Max(1, screenHeight);
-
-        var ray = ViewportPointToRay(new Vector2(screenPoint.x / width, screenPoint.y / height));
-        return ray.origin + ray.direction * distance;
+        return viewPosition + direction * distance;
     }
 
     /// <summary>
     /// 透视投影矩阵构建（Constant 模型：屏幕中心在 transform 处，眼距为 |zOffset|，
-    /// 屏幕物理尺寸取项目设置）
+    /// 屏幕尺寸取项目设置里的物理尺寸 × XROrigin 缩放）
     /// </summary>
     public Matrix4x4 CreatePerspectiveMatrix()
     {
-        var screenSize = ScreenSizeInMeters;
+        var screenSize = screenSizeInWorldUnits;
         float eyeToScreenDistance = Mathf.Max(Mathf.Abs(zOffset), 1e-4f);
         float f = nearClip / eyeToScreenDistance;
         float left = -screenSize.x / 2f * f;
@@ -245,7 +224,7 @@ public class ScreenPointToRayHelper : MonoBehaviour
 
         viewMatrix = CreateViewMatrix(viewPosition, forward, up);
 
-        var screenSize = ScreenSizeInMeters;
+        var screenSize = screenSizeInWorldUnits;
         float eyeToScreenDistance = Mathf.Max(Mathf.Abs(zOffset), 1e-4f);
         float scale = nearClip / eyeToScreenDistance;
         float halfWidth = screenSize.x * 0.5f;
@@ -260,30 +239,13 @@ public class ScreenPointToRayHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// 屏幕物理尺寸（米）：基础尺寸统一取自项目设置
-    /// Assets/Resources/ShiyanXR/ShiyanXRProjectSettings.asset。
-    ///
-    /// 默认再乘该相机所在 XROrigin 的世界缩放：XROrigin 放大 k 倍时，0 视差面在世界上也是
-    /// 物理尺寸的 k 倍（与 ShiyanXREyeStereoPreview 画的会聚面同一套定义），
-    /// 射线 / 投影必须用同一个有效尺寸，鼠标才会和画面里的位置对上。
+    /// 场景世界缩放 k：取参与投影的相机所在 XROrigin 的缩放（lossyScale.x）。
+    /// 0 视差面的世界尺寸 = 项目设置里的屏幕物理尺寸 × k，
+    /// 与编辑器预览 ShiyanXREyeStereoPreview.EffectiveConvergencePlaneSize 保持同一套定义。
+    /// 没有 XROrigin / 相机时按 1 处理。
     /// </summary>
-    Vector2 ScreenSizeInMeters
+    float WorldScale()
     {
-        get
-        {
-            var settings = ShiyanXRProjectSettings.Instance;
-            var size = new Vector2(settings.ScreenPhysicalWidth, settings.ScreenPhysicalHeight);
-            return m_ScaleScreenWithXROrigin ? size * ResolveXROriginScale() : size;
-        }
-    }
-
-    /// <summary>
-    /// 相机所在 XROrigin 的统一缩放（lossyScale.x）。没有 XROrigin、或相机不在其下时按 1 处理。
-    /// </summary>
-    float ResolveXROriginScale()
-    {
-        // 这里只用于取缩放，不要走 ResolveEyeCamera 的“找不到相机会警告”分支：
-        // Constant 模型本身可以不依赖相机，没有相机时按 1 处理即可。
         Camera eyeCamera = m_EyeCamera != null ? m_EyeCamera : Camera.main;
         if (eyeCamera == null) return 1f;
 
@@ -294,6 +256,23 @@ public class ScreenPointToRayHelper : MonoBehaviour
         if (float.IsNaN(scale) || float.IsInfinity(scale)) return 1f;
 
         return Mathf.Max(Mathf.Abs(scale), 1e-4f);
+    }
+
+    /// <summary>
+    /// 屏幕在世界空间里的尺寸：项目设置里的物理尺寸 × XROrigin 缩放。
+    /// zOffset 用的是场景世界单位，投影边界也必须用同一世界尺度；
+    /// 否则 XROrigin 被放大后，鼠标只映射到屏幕中央的一小块，交互会像失灵一样。
+    /// </summary>
+    public Vector2 screenSizeInWorldUnits
+    {
+        get
+        {
+            var settings = ShiyanXRProjectSettings.Instance;
+            float scale = WorldScale();
+            return new Vector2(
+                settings.ScreenPhysicalWidth * scale,
+                settings.ScreenPhysicalHeight * scale);
+        }
     }
 
     /// <summary>取立体矩阵用的相机：优先用线上面指定的那台，否则退到 Camera.main。</summary>
