@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEditor.Toolbars;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace com.shiyanxr.editor
 {
@@ -51,32 +53,63 @@ namespace com.shiyanxr.editor
     ///
     /// 面板值通过 <see cref="ShiyanXREyePanelState"/> + SerializedObject 读写：只有挂在 UnityEngine.Object 上，
     /// Unity 才能把改动记进 Undo 栈，Ctrl+Z / Ctrl+Y 可以撤销 / 重做面板上的修改。
+    ///
+    /// 设置按场景分别保存：每个场景一个状态对象，键是场景资源的 GUID，
+    /// 记录写在 ProjectSettings/ShiyanXREyePanelSettings.json，跨编辑器重启保留。
     /// </summary>
     sealed class ShiyanXREyePanel : PopupWindowContent
     {
-        const string k_SessionPrefix = "ShiyanXR.EyePanel.";
+        // 未保存的场景没有资源 GUID，用 handle 拼一个只在本次编辑器会话内有效的键
+        const string k_UnsavedSceneKeyPrefix = "unsaved:";
+        // 编辑器启动阶段还没有活动场景时的键；不参与持久化
+        const string k_NoSceneKey = "no-scene";
         const string k_UndoName = "Change ShiyanXR Eye Preview Settings";
+        // 拖滑条时每帧都在改值，攒半秒再落盘，避免每个 GUI 事件都写一次文件
+        const double k_SaveDelaySeconds = 0.5;
 
+        // 每个场景一个状态对象：键是场景 GUID，切换场景时按需创建 / 取回
+        static readonly Dictionary<string, ShiyanXREyePanelState> s_StatesBySceneKey =
+            new Dictionary<string, ShiyanXREyePanelState>();
         static ShiyanXREyePanelState s_State;
+        static string s_StateSceneKey;
         static SerializedObject s_SerializedState;
         // 当前打开的面板：Undo/Redo 后要立即重绘它，否则控件上还显示旧值
         static ShiyanXREyePanel s_OpenPanel;
 
+        // 当前活动场景的键。每次取用时比对 handle 与 path，场景切换、未命名场景刚被保存都能发现；
+        // 比依赖 activeSceneChangedInEditMode 之类的场景事件可靠（编辑器启动时并不保证会触发）。
+        static string s_ActiveSceneKey;
+        static int s_ActiveSceneHandle = int.MinValue;
+        static string s_ActiveScenePath;
+
+        // 延迟落盘：改值只更新内存里的记录，文件写入合并成一次
+        static bool s_SavePending;
+        static double s_SaveDueTime;
+
         /// <summary>
-        /// 面板状态的载体，由 ShiyanXREyeStereoPreview 读走，用于 Scene View 里的参考图形。
-        /// 不落盘（HideFlags.DontSave），域重载后由 <see cref="LoadState"/> 从 SessionState 恢复。
+        /// 当前场景的状态载体，由 ShiyanXREyeStereoPreview 读走，用于 Scene View 里的参考图形。
+        /// 每个场景一份：切换场景时按 GUID 取回内存里已有的对象，或从磁盘记录新建一个。
         /// </summary>
         internal static ShiyanXREyePanelState State
         {
             get
             {
-                if (s_State != null) return s_State;
+                string sceneKey = ActiveSceneKey();
+                if (s_State != null && s_StateSceneKey == sceneKey)
+                    return s_State;
 
-                s_State = ScriptableObject.CreateInstance<ShiyanXREyePanelState>();
-                // 不能用 HideAndDontSave：它包含 NotEditable，SerializedObject 会把面板控件全部画成只读。
-                // DontSave 只禁止落盘 / 卸载，不影响编辑与 Undo。
-                s_State.hideFlags = HideFlags.DontSave;
-                LoadState(s_State);
+                if (!s_StatesBySceneKey.TryGetValue(sceneKey, out s_State) || s_State == null)
+                {
+                    s_State = CreateState(sceneKey);
+                    s_StatesBySceneKey[sceneKey] = s_State;
+                }
+
+                s_StateSceneKey = sceneKey;
+
+                // 换了载体，SerializedObject 也得换，否则面板还在改上一个场景的对象
+                s_SerializedState?.Dispose();
+                s_SerializedState = null;
+
                 return s_State;
             }
         }
@@ -84,61 +117,212 @@ namespace com.shiyanxr.editor
         static ShiyanXREyePanel()
         {
             Undo.undoRedoPerformed += OnUndoRedoPerformed;
-            AssemblyReloadEvents.beforeAssemblyReload += DestroyState;
+            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EditorApplication.quitting += FlushSave;
+        }
+
+        /// <summary>新建一个场景的状态对象：先取默认值，再用该场景存下来的快照覆盖。</summary>
+        static ShiyanXREyePanelState CreateState(string sceneKey)
+        {
+            var state = ScriptableObject.CreateInstance<ShiyanXREyePanelState>();
+            // 不能用 HideAndDontSave：它包含 NotEditable，SerializedObject 会把面板控件全部画成只读。
+            // DontSave 只禁止落盘 / 卸载，不影响编辑与 Undo；持久化由 ShiyanXREyePanelSettings 负责。
+            state.hideFlags = HideFlags.DontSave;
+
+            if (IsPersistableSceneKey(sceneKey))
+            {
+                string json = ShiyanXREyePanelSettings.GetSettingsJson(sceneKey);
+                if (!string.IsNullOrEmpty(json))
+                    JsonUtility.FromJsonOverwrite(json, state);
+            }
+
+            return state;
         }
 
         /// <summary>
-        /// 域重载会把静态字段清零，而进 Play 就会发生一次域重载——不恢复的话面板会退回默认值。
-        /// 所以状态存 SessionState：它跨域重载存活，编辑器关闭才清。
+        /// 当前活动场景的键。场景切换、未命名场景刚保存成文件，都会让 handle / path 变化，
+        /// 这里比一下就能发现，顺便把状态切过去。
         /// </summary>
-        static void LoadState(ShiyanXREyePanelState state)
+#pragma warning disable 0618 // Unity 6.4 起 scene.handle 的 int 隐式转换被标记过时；为兼容 package.json 声明的 2022.3 仍用 int
+        static string ActiveSceneKey()
         {
-            state.convergencePlaneDistance = SessionState.GetFloat(k_SessionPrefix + "ConvergencePlaneDistance", state.convergencePlaneDistance);
-            state.interocularDistance = SessionState.GetFloat(k_SessionPrefix + "InterocularDistance", state.interocularDistance);
-            state.displayCameras = SessionState.GetBool(k_SessionPrefix + "DisplayCameras", state.displayCameras);
-            state.convergencePlaneAlpha = SessionState.GetFloat(k_SessionPrefix + "ConvergencePlaneAlpha", state.convergencePlaneAlpha);
-            state.leftCameraColor = LoadColor("LeftCameraColor", state.leftCameraColor);
-            state.rightCameraColor = LoadColor("RightCameraColor", state.rightCameraColor);
-            state.convergencePlaneColor = LoadColor("ConvergencePlaneColor", state.convergencePlaneColor);
+            Scene scene = SceneManager.GetActiveScene();
+
+            // 场景没变就用缓存的键；例外是“有路径却只拿到非持久化键”——
+            // 编辑器启动早期 AssetDatabase 可能还没就绪，等它好了要再算一次。
+            if (s_ActiveSceneKey != null
+                && scene.handle == s_ActiveSceneHandle
+                && scene.path == s_ActiveScenePath
+                && (IsPersistableSceneKey(s_ActiveSceneKey) || string.IsNullOrEmpty(scene.path)))
+                return s_ActiveSceneKey;
+
+            string previousKey = s_ActiveSceneKey;
+            int previousHandle = s_ActiveSceneHandle;
+            string previousPath = s_ActiveScenePath;
+
+            s_ActiveSceneHandle = scene.handle;
+            s_ActiveScenePath = scene.path;
+            s_ActiveSceneKey = SceneKey(scene);
+
+            if (previousKey != s_ActiveSceneKey)
+                OnActiveSceneKeyChanged(previousKey, previousHandle, previousPath);
+
+            return s_ActiveSceneKey;
+        }
+#pragma warning restore 0618
+
+        /// <summary>
+        /// 场景的持久化键：优先用资源 GUID，场景改名 / 移动目录后设置仍在；
+        /// 未保存的场景没有 GUID，用 handle 兜底——本次会话内各用各的，但不写进磁盘。
+        /// </summary>
+        static string SceneKey(Scene scene)
+        {
+            // 编辑器启动阶段可能还没有活动场景，别把它当成某个真实场景
+            if (!scene.IsValid())
+                return k_NoSceneKey;
+
+            string path = scene.path;
+            if (!string.IsNullOrEmpty(path))
+            {
+                string guid = AssetDatabase.AssetPathToGUID(path);
+                if (!string.IsNullOrEmpty(guid))
+                    return guid;
+            }
+
+            return k_UnsavedSceneKeyPrefix + scene.handle;
         }
 
-        static void SaveState()
+        static bool IsUnsavedSceneKey(string sceneKey) =>
+            sceneKey.StartsWith(k_UnsavedSceneKeyPrefix, System.StringComparison.Ordinal);
+
+        /// <summary>只有能对应到场景资源（GUID）的键才写进工程设置；未保存 / 无场景的键只留在内存里。</summary>
+        static bool IsPersistableSceneKey(string sceneKey) =>
+            !string.IsNullOrEmpty(sceneKey) && sceneKey != k_NoSceneKey && !IsUnsavedSceneKey(sceneKey);
+
+        /// <summary>
+        /// 键变了。最要紧的一种情况是未命名场景刚被保存成 .unity 文件：还是同一个场景（handle 不变），
+        /// 只是从没有路径变成了有路径——把会话里调好的值迁到新的场景 GUID 下，否则它会退回默认值。
+        /// 注意不能只看“旧键是 unsaved”：从一个 Untitled 场景切到另一个已保存场景时，不能把设置带过去。
+        /// </summary>
+        static void OnActiveSceneKeyChanged(string previousKey, int previousHandle, string previousPath)
         {
-            var state = State;
-            SessionState.SetFloat(k_SessionPrefix + "ConvergencePlaneDistance", state.convergencePlaneDistance);
-            SessionState.SetFloat(k_SessionPrefix + "InterocularDistance", state.interocularDistance);
-            SessionState.SetBool(k_SessionPrefix + "DisplayCameras", state.displayCameras);
-            SessionState.SetFloat(k_SessionPrefix + "ConvergencePlaneAlpha", state.convergencePlaneAlpha);
-            SaveColor("LeftCameraColor", state.leftCameraColor);
-            SaveColor("RightCameraColor", state.rightCameraColor);
-            SaveColor("ConvergencePlaneColor", state.convergencePlaneColor);
+            bool sceneJustSaved = previousKey != null
+                                  && previousHandle == s_ActiveSceneHandle
+                                  && string.IsNullOrEmpty(previousPath)
+                                  && !string.IsNullOrEmpty(s_ActiveScenePath)
+                                  && IsUnsavedSceneKey(previousKey)
+                                  && IsPersistableSceneKey(s_ActiveSceneKey);
+
+            if (sceneJustSaved && s_StatesBySceneKey.TryGetValue(previousKey, out var state))
+            {
+                s_StatesBySceneKey.Remove(previousKey);
+                s_StatesBySceneKey[s_ActiveSceneKey] = state;
+
+                if (s_StateSceneKey == previousKey)
+                    s_StateSceneKey = s_ActiveSceneKey;
+
+                PersistState(s_ActiveSceneKey, state);
+            }
+
+            // 新场景用的是另一套颜色 / 距离，立刻让 Scene View 重画
+            if (previousKey != null)
+                RepaintAll();
         }
 
-        // SessionState 没有颜色类型，借 HTML 串（含 alpha）存取
-        static Color LoadColor(string key, Color fallback) =>
-            ColorUtility.TryParseHtmlString(SessionState.GetString(k_SessionPrefix + key, string.Empty), out var color)
-                ? color
-                : fallback;
+        /// <summary>把当前场景的值写进持久化记录（先只改内存，文件写入延迟合并）。</summary>
+        static void PersistState()
+        {
+            if (s_State == null || string.IsNullOrEmpty(s_StateSceneKey)) return;
 
-        static void SaveColor(string key, Color color) =>
-            SessionState.SetString(k_SessionPrefix + key, "#" + ColorUtility.ToHtmlStringRGBA(color));
+            PersistState(s_StateSceneKey, s_State);
+        }
 
-        /// <summary>Undo/Redo 直接改的是 state 对象：把结果同步回 SessionState，并刷新 Scene View / Game View 与面板。</summary>
+        static void PersistState(string sceneKey, ShiyanXREyePanelState state)
+        {
+            if (!IsPersistableSceneKey(sceneKey)) return;
+
+            string json = JsonUtility.ToJson(state);
+            if (ShiyanXREyePanelSettings.SetSettingsJson(sceneKey, json))
+                ScheduleSave();
+        }
+
+        /// <summary>改值很频繁（拖滑条、取色器），攒 <see cref="k_SaveDelaySeconds"/> 秒再写一次文件。</summary>
+        static void ScheduleSave()
+        {
+            s_SavePending = true;
+            s_SaveDueTime = EditorApplication.timeSinceStartup + k_SaveDelaySeconds;
+
+            EditorApplication.update -= FlushSaveWhenDue;
+            EditorApplication.update += FlushSaveWhenDue;
+        }
+
+        static void FlushSaveWhenDue()
+        {
+            if (EditorApplication.timeSinceStartup < s_SaveDueTime)
+                return;
+
+            FlushSave();
+        }
+
+        static void FlushSave()
+        {
+            EditorApplication.update -= FlushSaveWhenDue;
+
+            if (!s_SavePending) return;
+
+            s_SavePending = false;
+            ShiyanXREyePanelSettings.SaveNow();
+        }
+
+        /// <summary>
+        /// Undo/Redo 直接改的是各场景的 state 对象：把调过的都回写一遍，
+        /// 这样无论撤销的是当前场景还是之前那个场景的修改，磁盘上都跟着更新。
+        /// </summary>
         static void OnUndoRedoPerformed()
         {
-            // state 还没创建过（或刚被域重载清掉）时，SessionState 里已经是最后一次保存的值，无需回写
-            if (s_State == null) return;
+            foreach (var pair in s_StatesBySceneKey)
+            {
+                // 磁盘记录里没有的场景说明从没改过，不用回写
+                if (ShiyanXREyePanelSettings.HasSettings(pair.Key))
+                    PersistState(pair.Key, pair.Value);
+            }
 
-            SaveState();
             RepaintAll();
         }
 
-        static void DestroyState()
+        /// <summary>进 Play 前把手头攒着的一次写入落盘，避免进播放 / 崩溃时丢掉最后一笔。</summary>
+        static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            if (s_State != null)
-                UnityEngine.Object.DestroyImmediate(s_State);
+            if (state == PlayModeStateChange.ExitingEditMode)
+                FlushSave();
+        }
+
+        /// <summary>
+        /// 域重载会把静态字段清零，而进 Play 就会发生一次域重载——所以先把挂起的改动落盘，
+        /// 再销毁各场景的状态对象；下次取用时从磁盘记录里恢复。
+        /// </summary>
+        static void OnBeforeAssemblyReload()
+        {
+            FlushSave();
+            DestroyStates();
+        }
+
+        static void DestroyStates()
+        {
+            foreach (var state in s_StatesBySceneKey.Values)
+            {
+                if (state != null)
+                    UnityEngine.Object.DestroyImmediate(state);
+            }
+
+            s_StatesBySceneKey.Clear();
 
             s_State = null;
+            s_StateSceneKey = null;
+            s_ActiveSceneKey = null;
+            s_ActiveSceneHandle = int.MinValue;
+            s_ActiveScenePath = null;
             s_SerializedState?.Dispose();
             s_SerializedState = null;
             s_OpenPanel = null;
@@ -166,15 +350,20 @@ namespace com.shiyanxr.editor
         {
             if (s_OpenPanel == this)
                 s_OpenPanel = null;
+
+            // 面板关掉时通常已经改完，直接落盘，不用等延迟合并
+            FlushSave();
         }
 
-        // 七行控件：距离 / 瞳距 / 显示相机 / 左右相机颜色 / 会聚面颜色与透明度；末尾再跟一块只读的尺寸信息
-        public override Vector2 GetWindowSize() => new Vector2(400f, 250f);
+        // 场景名 + 七行控件：距离 / 瞳距 / 显示相机 / 左右相机颜色 / 会聚面颜色与透明度；末尾再跟一块只读的尺寸信息
+        public override Vector2 GetWindowSize() => new Vector2(400f, 270f);
 
         public override void OnGUI(Rect rect)
         {
-            // 统一的标签宽度，让七行控件左边缘对齐
+            // 统一的标签宽度，让各控件左边缘对齐
             EditorGUIUtility.labelWidth = 170f;
+
+            DrawSceneHeader();
 
             var state = State;
             if (s_SerializedState == null || s_SerializedState.targetObject != state)
@@ -219,9 +408,25 @@ namespace com.shiyanxr.editor
             Undo.RegisterCompleteObjectUndo(state, k_UndoName);
             if (serializedState.ApplyModifiedPropertiesWithoutUndo())
             {
-                SaveState();
+                // 值已经写进当前场景的 state，接着同步到该场景的持久化记录
+                PersistState();
                 RepaintAll();
             }
+        }
+
+        /// <summary>
+        /// 标出当前场景：设置是按场景分别保存的，标题里写清楚，免得以为改了会带到别的场景。
+        /// </summary>
+        static void DrawSceneHeader()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            bool saved = !string.IsNullOrEmpty(scene.path);
+
+            EditorGUILayout.LabelField(
+                new GUIContent("Scene", "这些设置按场景分别保存，切换场景会加载对应场景自己的设置。"),
+                new GUIContent(
+                    saved ? scene.name : scene.name + " (unsaved)",
+                    saved ? scene.path : "场景还没保存成文件，这套设置只在本次编辑器会话内有效。"));
         }
 
         /// <summary>
@@ -257,23 +462,5 @@ namespace com.shiyanxr.editor
             if (value != property.colorValue)
                 property.colorValue = value;
         }
-    }
-
-    /// <summary>
-    /// 工具栏面板的状态载体。必须是 UnityEngine.Object，Unity 的 Undo 才能记录 / 撤销这些值；
-    /// 对象不落盘（HideFlags.DontSave），跨域重载的持久化由 SessionState 负责。
-    /// </summary>
-    internal sealed class ShiyanXREyePanelState : ScriptableObject
-    {
-        // public 字段会被 Unity 序列化，SerializedProperty 才能找到并记录 Undo
-        public float convergencePlaneDistance = 1f;
-        public float interocularDistance = 0.065f;
-        public bool displayCameras = true;
-        // 默认取红 / 蓝：与 ShiyanDevicesSimulator 的 leftCameraColor / rightCameraColor 同一视觉约定
-        public Color leftCameraColor = Color.red;
-        public Color rightCameraColor = Color.blue;
-        // 默认取青色：与 ShiyanDevicesSimulator 的 screenColor（屏幕 / 焦平面）同一视觉约定
-        public Color convergencePlaneColor = Color.cyan;
-        public float convergencePlaneAlpha = 0.3f;
     }
 }
