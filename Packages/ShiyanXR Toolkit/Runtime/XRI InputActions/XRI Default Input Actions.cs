@@ -114,7 +114,7 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                     ""name"": ""Is Tracked"",
                     ""type"": ""Button"",
                     ""id"": ""6bb4e248-e42b-47c3-b66c-79566508ca74"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
@@ -2600,7 +2600,7 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                     ""name"": ""Touch Release"",
                     ""type"": ""Button"",
                     ""id"": ""1415f3c5-fc5f-4f58-a044-4a69560151f2"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -2729,6 +2729,39 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""a09d1775-5b0e-4a2e-bebf-2c9da5cca30f"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Drag Current Position"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""eba36c35-a548-4443-87d8-4893e7d21102"",
+                    ""path"": ""<RawMouse>/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Drag Current Position"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""fd3dc90e-da2e-4edd-aae0-ebb52b6a401c"",
+                    ""path"": ""<RawMouse>/positionpx"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Drag Current Position"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
                     ""name"": """",
                     ""id"": ""40fc89b1-2773-4288-b02f-892fea9b7d48"",
                     ""path"": ""<TouchscreenGestureInputController>/twistDeltaRotation"",
@@ -2820,6 +2853,39 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                     ""name"": ""binding"",
                     ""id"": ""eb45d0ff-78db-43a7-b9c0-abd75e385a0b"",
                     ""path"": ""<Mouse>/delta"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Drag Delta"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""cb1b4c73-06bd-4e7f-9c10-4a8783f786c5"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Drag Delta"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""d0b6ebc2-c8ed-480d-9b57-8bff15707bb1"",
+                    ""path"": ""<RawMouse>/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Drag Delta"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""7d6accf9-0e3e-461e-a5b3-03df5af3ca4d"",
+                    ""path"": ""<RawMouse>/delta"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -2952,6 +3018,39 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
                     ""name"": ""binding"",
                     ""id"": ""38c38fe4-fefa-4a01-a80a-6185ecb009cb"",
                     ""path"": ""<Mouse>/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Touch Release"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""484387b4-c57b-46f3-bad1-23d31d32ba30"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Touch Release"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""b295594f-399e-42df-83b6-43eacbef7e76"",
+                    ""path"": ""<RawMouse>/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Touch Release"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""d9dd28cd-526f-4f06-a633-89e0478e2366"",
+                    ""path"": ""<RawMouse>/positionpx"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",

@@ -2,7 +2,7 @@
     "scenes": [
         {
             "sceneKey": "892495eca3f2cb2499808c86e736215a",
-            "settingsJson": "{\"convergencePlaneDistance\":23.440000534057618,\"interocularDistance\":0.06499999761581421,\"displayCameras\":true,\"leftCameraColor\":{\"r\":1.0,\"g\":0.0,\"b\":0.0,\"a\":1.0},\"rightCameraColor\":{\"r\":0.0,\"g\":0.0,\"b\":1.0,\"a\":1.0},\"convergencePlaneColor\":{\"r\":0.0,\"g\":1.0,\"b\":1.0,\"a\":1.0},\"convergencePlaneAlpha\":0.30000001192092898}"
+            "settingsJson": "{\"convergencePlaneDistance\":23.440000534057618,\"interocularDistance\":0.06499999761581421,\"displayCameras\":true,\"leftCameraColor\":{\"r\":1.0,\"g\":0.0,\"b\":0.0,\"a\":1.0},\"rightCameraColor\":{\"r\":0.0,\"g\":0.0,\"b\":1.0,\"a\":1.0},\"convergencePlaneColor\":{\"r\":0.0,\"g\":1.0,\"b\":1.0,\"a\":1.0},\"convergencePlaneAlpha\":0.0}"
         }
     ]
 }
