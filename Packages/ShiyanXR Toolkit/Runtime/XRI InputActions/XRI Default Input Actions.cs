@@ -3028,28 +3028,28 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
             ]
         },
         {
-            ""name"": ""Test"",
+            ""name"": ""Shiyan"",
             ""id"": ""ff5769d4-513e-4cd5-af15-17bf4bbdddd2"",
             ""actions"": [
                 {
-                    ""name"": ""M"",
-                    ""type"": ""Button"",
-                    ""id"": ""f63f511c-2720-4377-932c-5ad34bfe36fc"",
-                    ""expectedControlType"": """",
+                    ""name"": ""PresentSize"",
+                    ""type"": ""Value"",
+                    ""id"": ""20d081d0-a529-4743-b2ac-b2628319edcd"",
+                    ""expectedControlType"": ""Vector2"",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": false
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
                 {
                     ""name"": """",
-                    ""id"": ""516b1d30-940b-4839-88ed-26ee48c0cd92"",
-                    ""path"": ""<Keyboard>/m"",
+                    ""id"": ""0fa826a3-724f-49fe-8ff3-631d8e6236ff"",
+                    ""path"": ""<RuntimeInfo>/presentationsize"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""M"",
+                    ""action"": ""PresentSize"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -3225,9 +3225,9 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
         m_TouchscreenGestures_TwistDeltaRotation = m_TouchscreenGestures.FindAction("Twist Delta Rotation", throwIfNotFound: true);
         m_TouchscreenGestures_ScreenTouchCount = m_TouchscreenGestures.FindAction("Screen Touch Count", throwIfNotFound: true);
         m_TouchscreenGestures_TouchRelease = m_TouchscreenGestures.FindAction("Touch Release", throwIfNotFound: true);
-        // Test
-        m_Test = asset.FindActionMap("Test", throwIfNotFound: true);
-        m_Test_M = m_Test.FindAction("M", throwIfNotFound: true);
+        // Shiyan
+        m_Shiyan = asset.FindActionMap("Shiyan", throwIfNotFound: true);
+        m_Shiyan_PresentSize = m_Shiyan.FindAction("PresentSize", throwIfNotFound: true);
     }
 
     ~@XRIDefaultInputActions()
@@ -3241,7 +3241,7 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
         UnityEngine.Debug.Assert(!m_XRIRightHandLocomotion.enabled, "This will cause a leak and performance issues, XRIDefaultInputActions.XRIRightHandLocomotion.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_XRIUI.enabled, "This will cause a leak and performance issues, XRIDefaultInputActions.XRIUI.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_TouchscreenGestures.enabled, "This will cause a leak and performance issues, XRIDefaultInputActions.TouchscreenGestures.Disable() has not been called.");
-        UnityEngine.Debug.Assert(!m_Test.enabled, "This will cause a leak and performance issues, XRIDefaultInputActions.Test.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_Shiyan.enabled, "This will cause a leak and performance issues, XRIDefaultInputActions.Shiyan.Disable() has not been called.");
     }
 
     /// <summary>
@@ -5069,29 +5069,29 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
     /// </summary>
     public TouchscreenGesturesActions @TouchscreenGestures => new TouchscreenGesturesActions(this);
 
-    // Test
-    private readonly InputActionMap m_Test;
-    private List<ITestActions> m_TestActionsCallbackInterfaces = new List<ITestActions>();
-    private readonly InputAction m_Test_M;
+    // Shiyan
+    private readonly InputActionMap m_Shiyan;
+    private List<IShiyanActions> m_ShiyanActionsCallbackInterfaces = new List<IShiyanActions>();
+    private readonly InputAction m_Shiyan_PresentSize;
     /// <summary>
-    /// Provides access to input actions defined in input action map "Test".
+    /// Provides access to input actions defined in input action map "Shiyan".
     /// </summary>
-    public struct TestActions
+    public struct ShiyanActions
     {
         private @XRIDefaultInputActions m_Wrapper;
 
         /// <summary>
         /// Construct a new instance of the input action map wrapper class.
         /// </summary>
-        public TestActions(@XRIDefaultInputActions wrapper) { m_Wrapper = wrapper; }
+        public ShiyanActions(@XRIDefaultInputActions wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "Test/M".
+        /// Provides access to the underlying input action "Shiyan/PresentSize".
         /// </summary>
-        public InputAction @M => m_Wrapper.m_Test_M;
+        public InputAction @PresentSize => m_Wrapper.m_Shiyan_PresentSize;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
-        public InputActionMap Get() { return m_Wrapper.m_Test; }
+        public InputActionMap Get() { return m_Wrapper.m_Shiyan; }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
         public void Enable() { Get().Enable(); }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
@@ -5099,9 +5099,9 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
         public bool enabled => Get().enabled;
         /// <summary>
-        /// Implicitly converts an <see ref="TestActions" /> to an <see ref="InputActionMap" /> instance.
+        /// Implicitly converts an <see ref="ShiyanActions" /> to an <see ref="InputActionMap" /> instance.
         /// </summary>
-        public static implicit operator InputActionMap(TestActions set) { return set.Get(); }
+        public static implicit operator InputActionMap(ShiyanActions set) { return set.Get(); }
         /// <summary>
         /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
         /// </summary>
@@ -5109,14 +5109,14 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
         /// </remarks>
-        /// <seealso cref="TestActions" />
-        public void AddCallbacks(ITestActions instance)
+        /// <seealso cref="ShiyanActions" />
+        public void AddCallbacks(IShiyanActions instance)
         {
-            if (instance == null || m_Wrapper.m_TestActionsCallbackInterfaces.Contains(instance)) return;
-            m_Wrapper.m_TestActionsCallbackInterfaces.Add(instance);
-            @M.started += instance.OnM;
-            @M.performed += instance.OnM;
-            @M.canceled += instance.OnM;
+            if (instance == null || m_Wrapper.m_ShiyanActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_ShiyanActionsCallbackInterfaces.Add(instance);
+            @PresentSize.started += instance.OnPresentSize;
+            @PresentSize.performed += instance.OnPresentSize;
+            @PresentSize.canceled += instance.OnPresentSize;
         }
 
         /// <summary>
@@ -5125,21 +5125,21 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
         /// <remarks>
         /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
         /// </remarks>
-        /// <seealso cref="TestActions" />
-        private void UnregisterCallbacks(ITestActions instance)
+        /// <seealso cref="ShiyanActions" />
+        private void UnregisterCallbacks(IShiyanActions instance)
         {
-            @M.started -= instance.OnM;
-            @M.performed -= instance.OnM;
-            @M.canceled -= instance.OnM;
+            @PresentSize.started -= instance.OnPresentSize;
+            @PresentSize.performed -= instance.OnPresentSize;
+            @PresentSize.canceled -= instance.OnPresentSize;
         }
 
         /// <summary>
-        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="TestActions.UnregisterCallbacks(ITestActions)" />.
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="ShiyanActions.UnregisterCallbacks(IShiyanActions)" />.
         /// </summary>
-        /// <seealso cref="TestActions.UnregisterCallbacks(ITestActions)" />
-        public void RemoveCallbacks(ITestActions instance)
+        /// <seealso cref="ShiyanActions.UnregisterCallbacks(IShiyanActions)" />
+        public void RemoveCallbacks(IShiyanActions instance)
         {
-            if (m_Wrapper.m_TestActionsCallbackInterfaces.Remove(instance))
+            if (m_Wrapper.m_ShiyanActionsCallbackInterfaces.Remove(instance))
                 UnregisterCallbacks(instance);
         }
 
@@ -5149,21 +5149,21 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
         /// </remarks>
-        /// <seealso cref="TestActions.AddCallbacks(ITestActions)" />
-        /// <seealso cref="TestActions.RemoveCallbacks(ITestActions)" />
-        /// <seealso cref="TestActions.UnregisterCallbacks(ITestActions)" />
-        public void SetCallbacks(ITestActions instance)
+        /// <seealso cref="ShiyanActions.AddCallbacks(IShiyanActions)" />
+        /// <seealso cref="ShiyanActions.RemoveCallbacks(IShiyanActions)" />
+        /// <seealso cref="ShiyanActions.UnregisterCallbacks(IShiyanActions)" />
+        public void SetCallbacks(IShiyanActions instance)
         {
-            foreach (var item in m_Wrapper.m_TestActionsCallbackInterfaces)
+            foreach (var item in m_Wrapper.m_ShiyanActionsCallbackInterfaces)
                 UnregisterCallbacks(item);
-            m_Wrapper.m_TestActionsCallbackInterfaces.Clear();
+            m_Wrapper.m_ShiyanActionsCallbackInterfaces.Clear();
             AddCallbacks(instance);
         }
     }
     /// <summary>
-    /// Provides a new <see cref="TestActions" /> instance referencing this action map.
+    /// Provides a new <see cref="ShiyanActions" /> instance referencing this action map.
     /// </summary>
-    public TestActions @Test => new TestActions(this);
+    public ShiyanActions @Shiyan => new ShiyanActions(this);
     private int m_GenericXRControllerSchemeIndex = -1;
     /// <summary>
     /// Provides access to the input control scheme.
@@ -5906,18 +5906,18 @@ public partial class @XRIDefaultInputActions: IInputActionCollection2, IDisposab
         void OnTouchRelease(InputAction.CallbackContext context);
     }
     /// <summary>
-    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Test" which allows adding and removing callbacks.
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Shiyan" which allows adding and removing callbacks.
     /// </summary>
-    /// <seealso cref="TestActions.AddCallbacks(ITestActions)" />
-    /// <seealso cref="TestActions.RemoveCallbacks(ITestActions)" />
-    public interface ITestActions
+    /// <seealso cref="ShiyanActions.AddCallbacks(IShiyanActions)" />
+    /// <seealso cref="ShiyanActions.RemoveCallbacks(IShiyanActions)" />
+    public interface IShiyanActions
     {
         /// <summary>
-        /// Method invoked when associated input action "M" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "PresentSize" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnM(InputAction.CallbackContext context);
+        void OnPresentSize(InputAction.CallbackContext context);
     }
 }

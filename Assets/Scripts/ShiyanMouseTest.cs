@@ -22,9 +22,9 @@ public class ShiyanMouseTest : MonoBehaviour
     static void OnDeviceChange(UnityEngine.InputSystem.InputDevice device,
                                InputDeviceChange change)
     {
-        Debug.Log($"DEVICE {change} name='{device.name}' layout='{device.layout}' " +
-                  $"product='{device.description.product}' " +
-                  $"interface='{device.description.interfaceName}'");
+        //Debug.Log($"DEVICE {change} name='{device.name}' layout='{device.layout}' " +
+        //          $"product='{device.description.product}' " +
+        //          $"interface='{device.description.interfaceName}'");
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using com.unity.shiyantech.xr;
 using Unity.XR.CoreUtils;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public enum RayProjectionProvider
 {
@@ -51,7 +52,7 @@ public class ScreenPointToRayHelper : MonoBehaviour
     [Tooltip("指针（鼠标 / 触摸）坐标所在窗口的像素宽高；为 0 时用 Screen.width / Screen.height。\n" +
              "OpenXR runtime 自己开窗口显示画面时（例如 1280×720 的 SBS 窗口），指针坐标是那个窗口的像素，\n" +
              "而 Unity 的渲染分辨率可能更大；两者不一致时必须在这里填窗口的实际大小。")]
-    public Vector2 pointerWindowSize = Vector2.zero;
+    public InputActionProperty pointerWindowSizeActionProperty;
 
     [Tooltip("指针窗口横向并排了几个视图：0 = 自动（按 Screen.width / 窗口宽度推算），1 = 整个窗口就是一个视图，2 = SBS 立体窗口。")]
     public int pointerViewCount;
@@ -157,9 +158,11 @@ public class ScreenPointToRayHelper : MonoBehaviour
     {
         get
         {
-            if (pointerWindowSize.x > 0f && pointerWindowSize.y > 0f)
-                return pointerWindowSize;
-
+            if (!Utils.IsDisabledReferenceAction(pointerWindowSizeActionProperty))
+            {
+                Vector2 size = pointerWindowSizeActionProperty.action.ReadValue<Vector2>();
+                return size;
+            }
             return new Vector2(Screen.width, Screen.height);
         }
     }
@@ -200,7 +203,6 @@ public class ScreenPointToRayHelper : MonoBehaviour
 
         float u = pointerPosition.x / windowSize.x;
         float v = pointerPosition.y / windowSize.y;
-
         int viewCount = Mathf.Max(pointerViewCountResolved, 1);
         if (viewCount > 1)
         {

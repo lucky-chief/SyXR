@@ -2942,28 +2942,28 @@
             ]
         },
         {
-            "name": "Test",
+            "name": "Shiyan",
             "id": "ff5769d4-513e-4cd5-af15-17bf4bbdddd2",
             "actions": [
                 {
-                    "name": "M",
-                    "type": "Button",
-                    "id": "f63f511c-2720-4377-932c-5ad34bfe36fc",
-                    "expectedControlType": "",
+                    "name": "PresentSize",
+                    "type": "Value",
+                    "id": "20d081d0-a529-4743-b2ac-b2628319edcd",
+                    "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
                 {
                     "name": "",
-                    "id": "516b1d30-940b-4839-88ed-26ee48c0cd92",
-                    "path": "<Keyboard>/m",
+                    "id": "0fa826a3-724f-49fe-8ff3-631d8e6236ff",
+                    "path": "<RuntimeInfo>/presentationsize",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "M",
+                    "action": "PresentSize",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

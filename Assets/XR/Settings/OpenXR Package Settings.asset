@@ -174,10 +174,9 @@ MonoBehaviour:
   - {fileID: 4519088417437433503}
   - {fileID: -2660071221241080749}
   - {fileID: 2005319662050729852}
+  - {fileID: 8245482934674976066}
   - {fileID: 3018539734420843204}
-  - {fileID: 3133800980235017081}
   - {fileID: -664973786762026225}
-  - {fileID: -957662998244014424}
   - {fileID: 5763086302077407691}
   customLoaderName: 
   m_renderMode: 1
@@ -217,6 +216,28 @@ MonoBehaviour:
   required: 0
   customRuntimeLoaderName: 
   m_AutoStartSubsystem: 1
+--- !u!114 &-6888000140970274969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c02300d0530f4999a2e8368a538be2ca, type: 3}
+  m_Name: RuntimeInfoProfile Standalone
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RuntimeInfoProfile
+  m_enabled: 1
+  nameUi: Shiyan Runtime Info
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.runtimeinfo
+  openxrExtensionStrings: 
+  company: Shiyan
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
 --- !u!114 &-6623674304080845627
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -552,9 +573,9 @@ MonoBehaviour:
   - {fileID: 4796140182476144334}
   - {fileID: 5192799995608784119}
   - {fileID: -3858568392093548917}
+  - {fileID: -6888000140970274969}
   - {fileID: -2330878163186939848}
   - {fileID: -3721596679685731462}
-  - {fileID: -354889197337048393}
   - {fileID: -6933468200427709595}
   customLoaderName: 
   m_renderMode: 1
@@ -789,6 +810,7 @@ MonoBehaviour:
   m_Name: EyeTrackingFeature Android
   m_EditorClassIdentifier: com.unity.shiyantech.xr::com.unity.shiyantech.xr.EyeTrackingFeature
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: "\u89C6\u5EF6\u79D1\u6280\u773C\u8FFD"
   version: 1.0.0
   featureIdInternal: com.shiyantech.EyeGazeFeature
@@ -856,6 +878,7 @@ MonoBehaviour:
   m_Name: UIQuadLayerFeature Standalone
   m_EditorClassIdentifier: com.unity.shiyantech.xr::com.unity.shiyantech.xr.UIQuadLayerFeature
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: "\u89C6\u5EF6\u79D1\u6280 UI Quad Layer Handler"
   version: 1.0.0
   featureIdInternal: com.custom.openxr.features.uiquadlayer
@@ -865,6 +888,7 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+  m_Subscribed: 0
 --- !u!114 &-202814499335678327
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1127,6 +1151,7 @@ MonoBehaviour:
   m_Name: UIQuadLayerFeature Android
   m_EditorClassIdentifier: com.unity.shiyantech.xr::com.unity.shiyantech.xr.UIQuadLayerFeature
   m_enabled: 0
+  <failedInitialization>k__BackingField: 0
   nameUi: "\u89C6\u5EF6\u79D1\u6280 UI Quad Layer Handler"
   version: 1.0.0
   featureIdInternal: com.custom.openxr.features.uiquadlayer
@@ -1136,6 +1161,7 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+  m_Subscribed: 0
 --- !u!114 &4519088417437433503
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1370,6 +1396,28 @@ MonoBehaviour:
   featureIdInternal: com.unity.openxr.feature.input.metaquestplus
   openxrExtensionStrings: XR_META_touch_controller_plus
   company: Unity
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+--- !u!114 &8245482934674976066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c02300d0530f4999a2e8368a538be2ca, type: 3}
+  m_Name: RuntimeInfoProfile Android
+  m_EditorClassIdentifier: com.unity.shiyantech.xr::Shiyan.OpenXR.RawInput.RuntimeInfoProfile
+  m_enabled: 0
+  nameUi: Shiyan Runtime Info
+  version: 0.1.0
+  featureIdInternal: com.shiyan.openxr.runtimeinfo
+  openxrExtensionStrings: 
+  company: Shiyan
   priority: 0
   targetOpenXRApiVersion: 
   required: 0
